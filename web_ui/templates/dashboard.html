@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plugin System Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #ddd;
+        }
+        h1 {
+            color: #333;
+        }
+
+        .plugin{
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .active {border-left: 5px solid #4CAF50; }
+        .failed {border-left: 5px solid #F44336; }
+        .loaded {border-left: 5px solid #2196F3; }
+
+        button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        input {
+            padding: 5px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🚀 Plugin Dashboard</h1>
+
+<div>
+    <input type="text" id="url" placeholder="Remote Plugin URL">
+    <button onclick="install()">Install</button>
+    <button onclick="refresh()">Refresh</button>
+</div>
+
+<hr>
+
+<div id="plugins"></div>
+
+<script>
+
+async function refresh() {
+    const response = await fetch('/api/plugins');
+    const data = await response.json();
+
+    const container = document.getElementById('plugins');
+    container.innerHTML = '';
+
+    for (const [name, info] of Object.entries(data)) {
+        const div = document.createElement('div');
+        div.className = 'plugin ' + info.state;
+        div.innerHTML = `
+            <h3>${name}</h3>
+
+            <p><b>State:</b> ${info.state}</p>
+            <p><b>Path:</b> ${info.path}</p>
+
+            <p><b>Entry:</b> ${info.meta.entry}</p>
+            <p><b>Depends:</b> ${info.meta.depends || []}</p>
+
+            <p><b>Provides:</b> ${JSON.stringify(info.provides)}</p>
+            <p><b>Instance:</b> ${JSON.stringify(info.instance)}</p>
+            <p><b>Permissions:</b> ${JSON.stringify(info.permissions)}</p>
+            <p><b>Load Time:</b> ${info.metrics?.load_time ?? "N/A"}</p>
+            <p><b>Activate Time:</b> ${info.metrics?.activate_time ?? "N/A"}</p>
+
+            <button onclick="reload('${name}')">Reload</button>
+            <button onclick="activate('${name}')" ${info.state !== 'loaded' ? 'disabled' : ''}>Activate</button>
+            <button onclick="deactivate('${name}')" ${info.state !== 'active' ? 'disabled' : ''}>Deactivate</button>
+        `;
+
+        if (info.instance?.execution_mode === 'subprocess') {
+            div.innerHTML += `
+                <p><b>PID:</b> ${info.instance.process_pid}</p>
+                <p><b>RPC:</b> ${info.instance.rpc_host}:${info.instance.rpc_port}</p>
+            `;
+        }
+
+        const errorInfo = info.metrics?.error;
+
+        const activatingErrors = errorInfo?.activating_errors ?? [];
+        const deactivatingErrors = errorInfo?.deactivating_errors ?? [];
+        const loadingErrors = errorInfo?.loading_errors ?? [];
+
+        const hasErrors = activatingErrors.length > 0 || deactivatingErrors.length > 0 || loadingErrors.length > 0;
+
+        if (hasErrors) {
+            let errorHtml = `<div style="color: red; margin-top: 8px;"><b>Errors:</b><ul>`;
+
+            if (activatingErrors.length > 0) {
+                errorHtml += `<li><b>Activating Errors:</b> ${activatingErrors.join(" ; ")}</li>`;
+            }
+
+            if (deactivatingErrors.length > 0) {
+                errorHtml += `<li><b>Deactivating Errors:</b> ${deactivatingErrors.join(" ; ")}</li>`;
+            }
+
+            if (loadingErrors.length > 0) {
+                errorHtml += `<li><b>Loading Errors:</b> ${loadingErrors.join(" ; ")}</li>`;
+            }
+
+            errorHtml += `</ul></div>`;
+            div.innerHTML += errorHtml;
+        }
+
+        if (info.state === 'failed') div.style.borderColor = '#F44336';
+        else if (info.state === 'active') div.style.borderColor = '#4CAF50';
+        else if (info.state === 'loaded') div.style.borderColor = '#2196F3';
+        else if (info.state === 'discovered') div.style.borderColor = '#FFDD00';
+
+        container.appendChild(div);
+    }
+
+}
+
+async function reload(name) {
+    await fetch(`/api/plugins/reload/${name}`, {method: 'POST'});
+    refresh();
+}
+
+async function activate(name) {
+    const res = await fetch(`/api/plugins/activate/${name}`, {method: 'POST'});
+    const data = await res.json();
+    if (data.status !== 'ok') {
+        alert(data.message || 'Failed to activate plugin!');
+    } else {
+        alert('Plugin activated successfully!');
+    }
+    refresh();  // Refresh after activation to update the UI
+}
+
+async function deactivate(name) {
+    const res = await fetch(`/api/plugins/deactivate/${name}`, {method: 'POST'});
+    const data = await res.json();
+    if (data.status !== 'ok') {
+        alert(data.message || 'Failed to deactivate plugin!');
+    } else {
+        alert('Plugin deactivated successfully!');
+    }
+    refresh();  // Refresh after deactivation to update the UI
+}
+
+async function install() {
+    const url = document.getElementById('url').value;
+
+    const res = await fetch('/api/plugins/install', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url})
+    });
+
+    const data = await res.json();
+    alert(data.status);
+
+    refresh();
+}
+
+refresh();
+
+</script>
+
+</body>
+</html>
