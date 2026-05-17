@@ -1,0 +1,41 @@
+{
+  "format_templates": [
+    {
+      "id": "format.good.same_order",
+      "source": "{player} found {count} item(s).",
+      "translated": "{player} 找到了 {count} 个道具。"
+    },
+    {
+      "id": "format.good.reordered",
+      "source": "{player} found {count} item(s).",
+      "translated": "找到了 {count} 个道具：{player}。"
+    },
+    {
+      "id": "format.bad.renamed",
+      "source": "Potion x{count}",
+      "translated": "药水 x{amount}"
+    },
+    {
+      "id": "format.bad.brace",
+      "source": "Press {key} to start",
+      "translated": "按下 {key 开始"
+    }
+  ],
+  "percent_templates": [
+    {
+      "id": "percent.good.literal_percent",
+      "source": "Progress: %d%%",
+      "translated": "进度：%d%%"
+    },
+    {
+      "id": "percent.bad.type_changed",
+      "source": "Progress: %d%%",
+      "translated": "进度：%s%%"
+    },
+    {
+      "id": "percent.good.mapping",
+      "source": "%(player)s got %(count)d point(s)",
+      "translated": "%(player)s 获得了 %(count)d 分"
+    }
+  ]
+}

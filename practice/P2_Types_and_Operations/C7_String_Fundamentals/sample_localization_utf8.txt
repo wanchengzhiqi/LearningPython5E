@@ -1,0 +1,4 @@
+item.potion=HP药水
+item.elixir=MP灵药
+dialog.warning=Line 1\nLine 2
+menu.start=开始游戏

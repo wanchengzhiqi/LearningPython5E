@@ -1,0 +1,5 @@
+# style|name|template
+format|format_runtime_prompt|Press {key} to start
+format|format_runtime_reward|{name} got {count} point(s)
+percent|percent_runtime_progress|Progress: %(count)d%%
+plain|plain_not_formatted|Press {key} to start
