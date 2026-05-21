@@ -52,7 +52,7 @@
 ## Git Automation Boundary
 
 - Git hygiene automation may stage, commit, and push files that are clearly tied to the LearningPython5E learning journey, even when they are currently untracked. This includes learning notes and note assets, practice scripts and supporting data, stage README files, mini-project source files and resources, stage quiz files, learning profile files, learning-profile-derived snapshot images, and personal practice scripts in the project path that are strongly related to the current learning topic.
-- The project `tests/` directory is a hard exclusion for Git hygiene automation. Do not stage, unstage, commit, delete, move, edit, clean up, or otherwise operate on files under `tests/`. If a `tests/` path is already staged or otherwise blocks a clean learning-artifact commit, stop and report the situation instead of touching it.
+- The project `tests/` directory is a hard exclusion for Git hygiene automation. Do not stage, unstage, commit, delete, move, edit, clean up, or otherwise operate on files under `tests/`. If a `tests/` path is already staged, leave it exactly as-is and use explicit pathspecs to commit only authorized learning-theme files. Stop only if Git cannot avoid including or touching `tests/` while making the learning-artifact commit.
 - Generated/cache/temporary/IDE files such as `__pycache__/`, `.pyc`, temp files, `.venv/`, and `.idea/` remain ignored unless the user explicitly says otherwise.
 
 ## Runtime Notes
