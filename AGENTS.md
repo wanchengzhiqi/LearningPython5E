@@ -49,6 +49,12 @@
 - 编辑中文笔记、中文注释或其他中文内容时保持 UTF-8 编码，并尽量小范围修改。当前在 Windows 命令提示符或 PowerShell 中看到中文乱码，通常是终端默认编码不是 UTF-8 导致的显示问题，不应据此判断源文件内容已经损坏；除非用户明确要求，不要为了“修复乱码”而批量重写中文内容。
 - 当前项目有全局 `sitecustomize.py` 参与 Python 启动过程，看到启动日志时不要误判为项目内测试输出。
 
+## Git Automation Boundary
+
+- Git hygiene automation may stage, commit, and push files that are clearly tied to the LearningPython5E learning journey, even when they are currently untracked. This includes learning notes and note assets, practice scripts and supporting data, stage README files, mini-project source files and resources, stage quiz files, learning profile files, learning-profile-derived snapshot images, and personal practice scripts in the project path that are strongly related to the current learning topic.
+- The project `tests/` directory is a hard exclusion for Git hygiene automation. Do not stage, unstage, commit, delete, move, edit, clean up, or otherwise operate on files under `tests/`. If a `tests/` path is already staged or otherwise blocks a clean learning-artifact commit, stop and report the situation instead of touching it.
+- Generated/cache/temporary/IDE files such as `__pycache__/`, `.pyc`, temp files, `.venv/`, and `.idea/` remain ignored unless the user explicitly says otherwise.
+
 ## Runtime Notes
 
 常见入口：

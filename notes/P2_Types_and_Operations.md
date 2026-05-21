@@ -3876,3 +3876,691 @@
    17. 本地化记录集合适合用list管理，单条稳定记录适合用tuple或namedtuple表达。
    18. 工程中优先用清晰的数据结构表达“允许变”和“不希望变”的边界。
    ```
+
+10. 关于Python列表和元组的阶段末复盘与工程化总结：
+
+    > 列表和元组阶段的最终目标不是“记住某个方法名”，而是形成一套稳定判断流程：**先看源码表达式，再看创建了什么对象，再看名字绑定到哪里，再判断是原地修改还是重新绑定，再判断容器内部引用是否共享，最后再解释显示形式和工程边界。**
+
+    本阶段已经通过阶段测验，建议得分为 `88 / 100`。这说明主干已经成立，但仍有少数高级边界需要复盘：`_replace()` 不是深拷贝，`copy.deepcopy()` 通常复用不可变原子对象，`--report-json` 会改变命令行工具控制流，嵌套列表重复引用要先数“有几个容器对象”。
+
+    ### 10.1 阶段学习路径总览
+
+    ```tex
+    第一步：列表对象、名字绑定、对象身份
+        重点：a = b 不复制列表；is 看身份，== 看相等性。
+
+    第二步：序列操作
+        重点：索引、切片、拼接、重复通常创建或读取结果，不原地修改原对象。
+
+    第三步：列表方法、排序和 key 参数
+        重点：append / extend / sort / reverse 多数原地修改并返回None；sorted返回新列表；key用于生成比较代理值。
+
+    第四步：切片赋值、扩展切片和拷贝层级
+        重点：切片读取创建新外层列表；切片赋值原地修改旧列表；浅拷贝只复制外层。
+
+    第五步：嵌套列表、共享引用和默认参数陷阱
+        重点：容器保存引用；可变对象可能被容器内外多个位置共享。
+
+    第六步：元组、逗号、不可变边界和解包
+        重点：创建元组的是逗号；元组槽位引用不可替换；星号解包和*args有不同收集规则。
+
+    第七步：迷你项目
+        重点：用list管理记录集合，用namedtuple表达单条稳定记录，用tuple保存tags，用JSON/CSV进入和离开文件边界。
+
+    阶段测验：
+        重点：用代码预测和工程设计反向检查上述模型是否稳定。
+    ```
+
+    ### 10.2 列表对象与名字绑定
+
+    本节重点：
+
+    ```tex
+    1. 列表字面量会创建列表对象。
+    2. 名字不是盒子，名字是到对象的绑定。
+    3. a = b 不复制列表对象。
+    4. 修改列表对象本体时，所有引用该对象的名字都能观察到变化。
+    5. 让某个名字重新绑定到新列表，不会改变旧列表对象本体。
+    ```
+
+    典型例子：
+
+    ```python
+    records = ["menu.start", "menu.quit"]
+    alias = records
+    snapshot = records[:]
+
+    records.append("menu.options")
+
+    print(records)             # ['menu.start', 'menu.quit', 'menu.options']
+    print(alias)               # ['menu.start', 'menu.quit', 'menu.options']
+    print(snapshot)            # ['menu.start', 'menu.quit']
+    print(records is alias)    # True
+    print(records is snapshot) # False
+    ```
+
+    本质总结：
+
+    ```tex
+    records 和 alias 绑定同一个列表对象。
+    snapshot 绑定的是完整切片创建的新外层列表。
+    append 修改的是 records/alias 共享的列表对象本体。
+    ```
+
+    常踩的坑：
+
+    ```tex
+    误区：alias = records 会复制列表。
+    修正：赋值只复制绑定关系，不复制对象。
+
+    误区：snapshot 和 records 内容曾经相等，所以后续也会同步变化。
+    修正：snapshot 是另一个外层列表对象；除非共享的内层可变对象被修改，否则外层结构不会同步。
+
+    误区：records == snapshot 为 True 就说明二者是同一个对象。
+    修正：== 比较相等性；is 才比较身份。
+    ```
+
+    工程应用：
+
+    ```tex
+    1. 如果函数只是观察列表，可以直接传入原列表。
+    2. 如果函数会修改列表，要在命名或文档中明确说明，或者传入副本。
+    3. 在游戏本地化批处理里，records 这类集合常常用list保存，因为需要追加、过滤、排序和报告。
+    4. 如果要保留原始输入顺序或原始数据快照，要显式复制外层容器。
+    ```
+
+    ### 10.3 原地修改、方法返回值和重新绑定
+
+    本节重点：
+
+    ```tex
+    原地修改：对象身份不变，对象内容变了。
+    重新绑定：名字改绑到另一个对象，旧对象不一定变化。
+    方法返回值：不能把“返回None”误读成“操作失败”。
+    ```
+
+    常见操作对照：
+
+    ```tex
+    list.append(x)       原地追加一个元素，返回None
+    list.extend(xs)      原地追加xs中的每个元素，返回None
+    list.sort()          原地排序，返回None
+    list.reverse()       原地反转，返回None
+    sorted(xs)           创建并返回新列表
+    a + b                创建新列表
+    a += b               对列表通常原地扩展
+    ```
+
+    阶段测验暴露的细节：
+
+    ```python
+    a = ["ui"]
+    a.append(["checked"])
+    print(a)  # ['ui', ['checked']]
+
+    b = ["ui"]
+    b += ["checked"]
+    print(b)  # ['ui', 'checked']
+    ```
+
+    纠正规则：
+
+    ```tex
+    a += ["checked"] 对列表更接近 a.extend(["checked"])，不是一般意义上的 a.append("checked")。
+    本题中二者结果相似，只是因为右侧列表恰好只有一个元素。
+    ```
+
+    工程应用：
+
+    ```tex
+    1. 使用 list.sort() 时，不要写 sorted_records = records.sort()。
+    2. 需要保留原列表时，用 sorted(records)。
+    3. 需要就地维护一个工作队列时，用 append / extend / pop。
+    4. API设计中，原地修改方法返回None是一种提醒：调用者不要误以为拿到了新对象。
+    ```
+
+    ### 10.4 切片读取、切片赋值和扩展切片
+
+    本节重点：
+
+    ```tex
+    切片读取：作为表达式，创建新外层列表。
+    切片赋值：作为赋值目标，原地修改原列表对象。
+    普通切片赋值可以改变长度。
+    扩展切片赋值必须目标位置数量和右侧元素数量相同。
+    ```
+
+    例子：
+
+    ```python
+    keys = ["start", "load", "settings", "quit"]
+    part = keys[1:]
+    watcher = keys
+
+    keys[1:3] = ["continue", "save", "options"]
+
+    print(part)    # ['load', 'settings', 'quit']
+    print(keys)    # ['start', 'continue', 'save', 'options', 'quit']
+    print(watcher) # ['start', 'continue', 'save', 'options', 'quit']
+    ```
+
+    本质总结：
+
+    ```tex
+    part = keys[1:] 创建新外层列表。
+    watcher = keys 共享原列表。
+    keys[1:3] = ... 原地修改原列表，所以 watcher 能看到变化。
+    ```
+
+    重要纠偏：
+
+    ```tex
+    切片赋值时，不是把右侧列表对象本身“植入”原列表；
+    而是把右侧可迭代对象产生的元素引用写入目标区间。
+    ```
+
+    扩展切片：
+
+    ```python
+    items = ["A", "B", "C", "D", "E"]
+    items[::2] = ["x", "y", "z"]
+    print(items)  # ['x', 'B', 'y', 'D', 'z']
+
+    items = ["A", "B", "C", "D"]
+    items[::2] = ["x", "y", "z"]  # ValueError
+    ```
+
+    你在学习中提出过一个很关键的观察：之前的预测题中，如果列表已经经过前一步切片赋值而长度变化，那么 `items[::2]` 命中的位置数量也会变化。因此判断扩展切片是否报错时，不能只看源码形状，要先计算“当前对象状态”。
+
+    与解包的关系：
+
+    ```tex
+    扩展切片赋值和普通解包都体现“形状/数量匹配”思想。
+    但二者不是同一个机制：
+        扩展切片赋值是在修改已有可变序列的离散槽位；
+        解包赋值是在把可迭代对象产生的元素绑定给目标名字。
+    ```
+
+    ### 10.5 排序、key参数和比较代理值
+
+    本节重点：
+
+    ```tex
+    list.sort() 原地排序并返回None。
+    sorted() 接收任意可迭代对象，返回新列表。
+    key 参数接收函数；Python用 key(obj) 的结果参与比较，而不是直接比较 obj 本身。
+    ```
+
+    例子：
+
+    ```python
+    records = [
+        ("quest.long", 42),
+        ("menu.start", 10),
+        ("debug.empty", 0),
+    ]
+
+    by_length = sorted(records, key=lambda item: item[1])
+    print(by_length)
+    ```
+
+    你提出过的观察很准确：`sort()`、`sorted()`、`min()`、`max()` 都有 `key` 参数，它们共同点是“需要比较元素”。`key` 不是改变元素本体，而是给比较过程提供一个代理值。
+
+    应知应会：
+
+    ```tex
+    sorted(records, key=lambda r: r.key)
+    sorted(records, key=lambda r: len(r.translation))
+    min(records, key=lambda r: len(r.translation))
+    max(records, key=lambda r: len(r.translation))
+    ```
+
+    工程规则：
+
+    ```tex
+    1. 需要保留原顺序时，用 sorted。
+    2. 工作列表可以被重排时，用 list.sort。
+    3. key函数应尽量无副作用，只负责提取比较依据。
+    4. 对本地化记录排序时，常见key包括 key字符串、translation长度、tag数量、issue数量。
+    ```
+
+    ### 10.6 去重、set、dict.fromkeys和顺序
+
+    本节重点：
+
+    ```tex
+    set 可以去重，但不保证保留输入顺序。
+    dict 的键也会去重，并且 Python 3.7+ 语言层保证保留插入顺序。
+    list(dict.fromkeys(L)) 是常见的保序去重写法。
+    ```
+
+    例子：
+
+    ```python
+    keys = ["menu.start", "menu.quit", "menu.start", "menu.options"]
+
+    print(list(dict.fromkeys(keys)))
+    print(list(set(keys)))
+    ```
+
+    本质总结：
+
+    ```tex
+    dict 和 set 的去重都依赖 hash 与 ==。
+    先用 hash 定位候选位置，再用 == 判断是否相等。
+    所以能作为 set 元素或 dict 键的对象必须可哈希。
+    ```
+
+    常踩的坑：
+
+    ```tex
+    误区：set顺序是随机的。
+    修正：不是随机，而是语言不保证保留输入顺序；不要依赖它做稳定输出。
+
+    误区：dict.fromkeys只是“碰巧”保序。
+    修正：在Python 3.7+中，dict插入顺序是语言保证；Python 3.9可安全按此理解。
+
+    误区：去重就应该删除重复项。
+    修正：工程中常常要先报告重复项，再决定是否去重。Counter适合“检查重复并保留计数”。
+    ```
+
+    工程应用：
+
+    ```tex
+    1. 本地化 key 去重但保留首次出现顺序：list(dict.fromkeys(keys))。
+    2. 只做集合关系比较：set(source_keys) - set(target_keys)。
+    3. 要报告重复 key：Counter(keys)。
+    4. 要生成稳定报告：不要直接输出 set，先 sorted(...) 或保序处理。
+    ```
+
+    ### 10.7 嵌套列表、共享引用和拷贝层级
+
+    本节重点：
+
+    ```tex
+    容器保存的是对象引用。
+    同一个可变对象可以被多个容器槽位引用。
+    同一个可变对象也可以被容器外部名字引用。
+    判断共享风险时，先数“有几个容器对象”，再看槽位保存哪些引用。
+    ```
+
+    典型陷阱：
+
+    ```python
+    L = [[0] * 3] * 3
+    L[0][1] = 9
+    print(L)  # [[0, 9, 0], [0, 9, 0], [0, 9, 0]]
+    ```
+
+    正确对象图：
+
+    ```tex
+    inner = [0, 0, 0]
+    L = [inner, inner, inner]
+    ```
+
+    阶段测验中暴露的疑问是：能不能把九个 `0` 的引用类比为九个临时变量？这里要纠正：这个类比会把问题带偏。关键不在于数字 `0` 是否不可变，而在于**内层列表对象只有一个**。`L[0][1] = 9` 修改的是这唯一一个内层列表的第1号槽位，所以从 `L[0]`、`L[1]`、`L[2]` 三个入口看过去都变了。
+
+    对比：
+
+    ```python
+    L = [[0] * 3 for _ in range(3)]
+    L[0][1] = 9
+    print(L)  # [[0, 9, 0], [0, 0, 0], [0, 0, 0]]
+    ```
+
+    浅拷贝：
+
+    ```python
+    original = [["menu.start", ["ui"]]]
+    shallow = original[:]
+    original[0][1].append("reviewed")
+
+    print(shallow)  # [['menu.start', ['ui', 'reviewed']]]
+    ```
+
+    深拷贝：
+
+    ```python
+    import copy
+
+    original = [["menu.start", ["ui"]]]
+    deep = copy.deepcopy(original)
+    original[0][1].append("reviewed")
+
+    print(deep)  # [['menu.start', ['ui']]]
+    ```
+
+    重要纠偏：
+
+    ```tex
+    deepcopy 会递归复制容器和多数可变对象；
+    但对 str、int、None 等不可变原子对象，通常直接复用原对象；
+    这种复用是安全的，因为不可变对象不能被原地修改。
+    ```
+
+    工程规则：
+
+    ```tex
+    1. 对二维表、棋盘、矩阵，避免 [[x] * n] * m。
+    2. 对记录集合做快照时，先判断是否需要隔离内层可变对象。
+    3. 共享可变对象不是一定错误，但必须是有意设计并清楚标注。
+    4. 本地化记录的 tags 若不希望被修改，优先用 tuple 而不是 list。
+    ```
+
+    ### 10.8 元组、浅不可变和namedtuple
+
+    本节重点：
+
+    ```tex
+    创建元组的关键是逗号。
+    元组不可变，准确说是元组槽位保存的引用不可替换。
+    元组内部如果引用了可变对象，该可变对象仍然可以原地修改。
+    namedtuple 是 tuple 的子类风格记录类型，提供字段名访问。
+    ```
+
+    例子：
+
+    ```python
+    a = ("menu.start")   # str
+    b = ("menu.start",)  # tuple
+    c = "menu.start",    # tuple
+    d = ()               # empty tuple
+    ```
+
+    元组浅不可变：
+
+    ```python
+    record = ("menu.start", "Start", ["ui"])
+
+    record[1] = "Begin"       # TypeError
+    record[2].append("check") # 合法，修改的是列表对象
+    ```
+
+    正确说法：
+
+    ```tex
+    不要笼统说“元组内容变了”。
+    更精确的说法是：
+        元组保存的引用没有变；
+        引用指向的列表对象发生了原地修改；
+        容器显示形式因此看起来变了。
+    ```
+
+    namedtuple：
+
+    ```python
+    from collections import namedtuple
+
+    Record = namedtuple("Record", "key source translation tags")
+    record = Record("menu.start", "Start", "Start Game", ("ui", "menu"))
+    updated = record._replace(translation="Begin Game")
+
+    print(record)
+    print(updated)
+    print(record is updated)           # False
+    print(record.tags is updated.tags) # True
+    ```
+
+    阶段测验纠偏：
+
+    ```tex
+    1. namedtuple实例的repr会显示字段名，例如 Record(key='menu.start', ...)。
+    2. _replace() 创建新Record实例，但未替换字段直接复用原引用。
+    3. _replace() 不是深拷贝。
+    4. 如果要“修改”某条namedtuple记录，应创建新记录，并让外层列表槽位重新绑定到新记录。
+    ```
+
+    例如：
+
+    ```python
+    records[0] = records[0]._replace(
+        tags=records[0].tags + ("reviewed",)
+    )
+    ```
+
+    禁忌：
+
+    ```python
+    records[0].tags += ("reviewed",)  # 对namedtuple字段会失败
+    ```
+
+    因为增强赋值最终需要把新tuple写回 `tags` 属性，而 namedtuple 字段不能重新赋值。
+
+    ### 10.9 组包、解包、扩展解包和*args
+
+    本节重点：
+
+    ```tex
+    解包：把右侧可迭代对象产生的元素绑定到左侧目标。
+    组包：把多个对象收集进一个容器。
+    扩展解包中的 *target 总是收集为 list。
+    函数定义中的 *args 总是收集为 tuple。
+    ```
+
+    例子：
+
+    ```python
+    record = ("menu.start", "Start", "Begin", ("ui", "menu"))
+    key, source, translation, tags = record
+
+    first, *middle, last = ["start", "load", "settings", "quit"]
+    print(middle)  # ['load', 'settings']
+    ```
+
+    常踩的坑：
+
+    ```tex
+    误区：扩展解包完全不要求数量。
+    修正：*target 可以收集0个或多个元素，但非星号目标仍必须有元素可绑定。
+    ```
+
+    例如：
+
+    ```python
+    first, *middle, last = ["only"]  # ValueError
+    ```
+
+    工程应用：
+
+    ```tex
+    1. 函数多返回值本质上常用tuple承载。
+    2. 处理固定结构记录时，解包可以提升可读性。
+    3. 处理CLI参数或路径片段时，扩展解包能表达“头部、中间、尾部”。
+    4. 函数形参中的 *args 适合接收数量不固定的位置参数。
+    ```
+
+    ### 10.10 外部JSON/CSV、结构化报告和命令行控制流
+
+    本阶段迷你项目 `mini_project_localization_records.py` 把列表和元组知识放进了游戏本地化批处理场景：
+
+    ```tex
+    外部JSON/CSV文件
+        -> json.loads / csv.DictReader
+        -> Python list / dict / str
+        -> Record namedtuple
+        -> records list
+        -> issue_report list
+        -> record_to_dict
+        -> json.dumps
+        -> JSON文本报告
+    ```
+
+    数据结构选择：
+
+    ```tex
+    records 用 list：
+        因为记录集合需要追加、删除、排序、过滤。
+
+    单条 record 用 namedtuple：
+        因为 key/source/translation/tags 字段结构稳定，并且按字段名访问更清晰。
+
+    tags 用 tuple：
+        因为不希望被无意原地修改。
+
+    issue report 用 list + dict：
+        因为报告需要按顺序保存多条问题，并最终转成JSON文本。
+    ```
+
+    JSON/CSV边界：
+
+    ```tex
+    JSON object -> Python dict
+    JSON array  -> Python list
+    CSV row     -> csv.DictReader 产生的 dict-like mapping
+    JSON文本    -> str
+    文件路径    -> Path / str，不是文件对象本身
+    ```
+
+    阶段测验暴露的控制流问题：
+
+    ```python
+    if report_json or json_output:
+        data = issue_report_data(records, max_length, source_name)
+        if json_output:
+            dump_issue_report_json(data, json_output)
+        if report_json:
+            dump_issue_report_json(data)
+        return
+    ```
+
+    纠正规则：
+
+    ```tex
+    --report-json 输出的是结构化JSON，主要定位是机器可读。
+    因为 indent=2，所以人也能读，但这不是它的主要定位。
+    一旦进入 report_json/json_output 分支，run_demo 会提前 return。
+    因此不会继续打印普通 issue report 和 Unpacking one record 演示。
+    ```
+
+    工程习惯：
+
+    ```tex
+    1. 命令行工具要先看参数如何改变控制流。
+    2. 机器可读输出应尽量只输出结构化数据，避免混入演示性文本。
+    3. JSON报告中不要直接塞 Record、set、自定义对象；先转成 dict/list/str/int/bool/None。
+    4. 内部模型可以用 tuple 表达稳定性；输出 JSON 时要转成 JSON 支持的数据形态。
+    ```
+
+    ### 10.11 本阶段你提出过的问题与已纠正的误区
+
+    1. 关于扩展切片赋值是否报错：
+
+       ```tex
+       你的纠正是对的：要根据当前列表状态计算目标位置数量。
+       同一行 items[::2] = ["A", "B", "C"] 是否报错，取决于执行到该行时 items[::2] 到底命中几个位置。
+       ```
+
+    2. 关于扩展切片赋值和解包的联系：
+
+       ```tex
+       二者都体现“形状/数量匹配”的约束；
+       但扩展切片赋值修改已有列表槽位，解包赋值绑定名字。
+       ```
+
+    3. 关于 key 参数：
+
+       ```tex
+       sort、sorted、min、max 等都有比较语义。
+       key函数不改变元素本体，只提供比较代理值。
+       ```
+
+    4. 关于保序去重：
+
+       ```tex
+       list(dict.fromkeys(L)) 是常见保序去重写法。
+       set也去重，但不保证保留输入顺序。
+       dict和set的去重都依赖hash与==。
+       ```
+
+    5. 关于所有序列是否保存引用：
+
+       ```tex
+       容器保存的是对象引用。
+       可变元素可能被同一个容器的多个位置共享，也可能被容器外部名字共享。
+       数据结构越复杂，越要主动检查共享引用。
+       ```
+
+    6. 关于列表和元组阶段后的下一阶段：
+
+       ```tex
+       之前说“下一阶段是字典”过窄。
+       更准确的下一小阶段是：字典和文件。
+       它还承担当前大阶段核心对象类型的收束复盘任务。
+       ```
+
+    ### 10.12 阶段测验暴露的薄弱处与修正规则
+
+    ```tex
+    薄弱处1：把 += 过度类比为 append
+    修正：列表 += iterable 更接近 extend(iterable)。
+
+    薄弱处2：把切片赋值右侧列表说成被“植入”
+    修正：写入的是右侧可迭代对象产生的元素引用，不是右侧列表对象本身。
+
+    薄弱处3：把 deepcopy 理解成所有对象都不共享
+    修正：deepcopy 隔离嵌套可变对象；不可变原子对象通常可以安全共享。
+
+    薄弱处4：把 _replace 说成深拷贝
+    修正：_replace 创建新 namedtuple 实例，未替换字段复用原引用。
+
+    薄弱处5：扩展解包数量规则说得过宽
+    修正：*target 可收集0个或多个元素，但非星号目标仍需要元素可绑定。
+
+    薄弱处6：误判 --report-json 的后续输出
+    修正：该分支会提前 return，不再打印解包演示。
+
+    薄弱处7：对 namedtuple 字段使用 +=
+    修正：字段不可重新赋值；应使用 _replace 创建新记录并替换外层列表槽位。
+
+    薄弱处8：把 set 顺序说成随机
+    修正：set顺序不是随机语义，而是不保证保留输入顺序。
+
+    薄弱处9：嵌套列表层级判断仍有卡点
+    修正：先数容器对象，再看槽位引用；[[0] * 3] * 3 只有一个内层列表对象。
+    ```
+
+    ### 10.13 工程应知应会清单
+
+    ```tex
+    1. 用 list 表达需要增删改查的对象集合。
+    2. 用 tuple / namedtuple 表达结构稳定、不希望随意改字段的记录。
+    3. 用 tuple 保存 tags 这类不希望被原地修改的小型标签集合。
+    4. 用 Counter 统计重复 key，而不是只用 set 悄悄去重。
+    5. 用 sorted(records, key=...) 生成排序后的新列表。
+    6. 用 records.sort(key=...) 原地整理工作列表。
+    7. 用 list(dict.fromkeys(keys)) 做保序去重。
+    8. 用 copy.deepcopy 之前先问：我到底需要隔离哪一层？
+    9. 避免把可变对象作为默认参数。
+    10. 避免 [[...]] * n 这类会复制内层可变对象引用的写法。
+    11. JSON/CSV输入后得到的是新的Python对象结构，不是“复制文件本身”。
+    12. JSON输出前要把 Record、tuple、set 等内部对象模型转成JSON支持的结构。
+    13. 命令行参数可能改变函数控制流，预测输出时要先看早返回分支。
+    14. 容器显示使用元素repr风格，显示形式不是对象本体。
+    15. 面对复杂容器，优先画对象图，不要只凭显示结果猜共享关系。
+    ```
+
+    ### 10.14 阶段精髓小结
+
+    ```tex
+    1. 列表是可变序列，元组是不可变序列。
+    2. 名字绑定对象；赋值不复制对象。
+    3. 原地修改改变对象本体，重新绑定改变名字指向。
+    4. 列表方法的返回值和列表对象的变化是两件事。
+    5. append追加一个元素，extend和+=追加可迭代对象中的元素。
+    6. sort原地排序，sorted返回新列表。
+    7. key参数提供比较代理值，不改变元素对象本体。
+    8. 切片读取创建新外层列表；切片赋值原地修改原列表。
+    9. 扩展切片赋值必须目标位置数量与右侧元素数量一致。
+    10. 浅拷贝只复制外层容器；深拷贝主要用于隔离嵌套可变对象。
+    11. deepcopy通常可以安全复用不可变原子对象。
+    12. 嵌套列表重复陷阱的核心是共享同一个内层列表对象。
+    13. 元组由逗号创建；单元素元组必须写尾随逗号。
+    14. 元组槽位引用不可替换，但槽位引用的可变对象仍可原地修改。
+    15. namedtuple的_replace创建新实例，未替换字段复用原引用。
+    16. 赋值解包中的*target收集为list；函数定义中的*args收集为tuple。
+    17. dict.fromkeys可做保序去重；set不保证保留输入顺序。
+    18. dict和set的去重都依赖hash与==。
+    19. JSON object对应Python dict，JSON array对应Python list。
+    20. 阶段迷你项目的核心价值，是把列表、元组、namedtuple、dict、Counter、JSON/CSV和本地化检查放进同一个对象模型中理解。
+    ```

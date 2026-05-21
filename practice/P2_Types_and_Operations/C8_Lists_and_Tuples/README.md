@@ -36,6 +36,10 @@ python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\06_tuples_unpacking_
 ```powershell
 python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py
 python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --issues-only
+python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input practice\P2_Types_and_Operations\C8_Lists_and_Tuples\sample_localization_records.json
+python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input practice\P2_Types_and_Operations\C8_Lists_and_Tuples\sample_localization_records.csv --issues-only
+python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input practice\P2_Types_and_Operations\C8_Lists_and_Tuples\sample_localization_records.json --report-json
+python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input practice\P2_Types_and_Operations\C8_Lists_and_Tuples\sample_localization_records.csv --json-output report.json
 python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --copy-demo
 python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --shared-tags-demo
 ```

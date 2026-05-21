@@ -1,0 +1,8 @@
+key,source,translation,tags
+csv.menu.start,Start Game,Begin Game,ui;menu
+csv.menu.start,Start,Launch,duplicate;ui
+csv.debug.empty,Debug only,,debug
+csv.percent.named,%(item)s x%(count)d,%(count)d x%(item)s,format;percent
+csv.percent.positional,%s x%d,%d x%s,format;percent
+csv.broken.brace,Press {key,Press {key,format;broken
+csv.value.precision,Value: {value:.2f},Value: {value},format;precision

@@ -1,0 +1,58 @@
+{
+  "records": [
+    {
+      "key": "sample.menu.start",
+      "source": "Start Game",
+      "translation": "Begin Game",
+      "tags": ["ui", "menu"]
+    },
+    {
+      "key": "sample.item.count",
+      "source": "{item} x{count}",
+      "translation": "{count} x{item}",
+      "tags": ["item", "format"]
+    },
+    {
+      "key": "sample.percent.named",
+      "source": "%(item)s x%(count)d",
+      "translation": "%(count)d x%(item)s",
+      "tags": "percent;format"
+    },
+    {
+      "key": "sample.dialog.line",
+      "source": "Line 1\nLine 2",
+      "translation": "Line 1\\nLine 2",
+      "tags": ["dialog", "newline"]
+    },
+    {
+      "key": "sample.debug.blank",
+      "source": "Debug only",
+      "translation": "   ",
+      "tags": null
+    },
+    {
+      "key": "sample.player.attr",
+      "source": "Hello {player.name}",
+      "translation": "Hello {player}",
+      "tags": ["format", "attribute"]
+    },
+    [
+      "sample.value.precision",
+      "Value: {value:.2f}",
+      "Value: {value}",
+      ["format", "precision"]
+    ],
+    [
+      "sample.quest.long",
+      "Find the old key before sunset.",
+      "Find the old key before sunset near the west tower gate.",
+      "quest;length"
+    ],
+    {
+      "key": "sample.menu.start",
+      "source": "Start",
+      "translation": "Launch",
+      "tags": ["duplicate"]
+    }
+  ]
+}

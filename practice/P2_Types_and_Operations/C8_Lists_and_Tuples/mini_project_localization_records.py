@@ -8,14 +8,19 @@ This stage-end practice tool keeps the object model visible:
 Run:
     python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py
     python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --issues-only
+    python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input records.json
+    python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --input records.csv --report-json
     python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --copy-demo
     python practice\P2_Types_and_Operations\C8_Lists_and_Tuples\mini_project_localization_records.py --shared-tags-demo
 """
 
 import argparse
 import copy
+import csv
+import json
 import string
 from collections import Counter, namedtuple
+from pathlib import Path
 
 
 Record = namedtuple("Record", "key source translation tags")
@@ -49,6 +54,98 @@ def demo_records():
     ]
 
 
+def normalize_tags(value, index):
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return tuple(tag.strip() for tag in value.split(";") if tag.strip())
+    if isinstance(value, (list, tuple)):
+        return tuple(str(tag).strip() for tag in value if str(tag).strip())
+    raise ValueError(f"record {index}: tags must be a list, tuple, semicolon string, or null")
+
+
+def normalize_text(value):
+    if value is None:
+        return ""
+    return str(value)
+
+
+def record_from_mapping(data, index):
+    required_fields = ("key", "source", "translation")
+    missing = [field for field in required_fields if field not in data]
+    if missing:
+        raise ValueError(f"record {index}: missing required field(s): {', '.join(missing)}")
+
+    key = normalize_text(data["key"])
+    if not key.strip():
+        raise ValueError(f"record {index}: key cannot be empty")
+
+    return Record(
+        key,
+        normalize_text(data["source"]),
+        normalize_text(data["translation"]),
+        normalize_tags(data.get("tags", ()), index),
+    )
+
+
+def record_from_sequence(data, index):
+    if len(data) not in (3, 4):
+        raise ValueError(f"record {index}: expected 3 or 4 fields, got {len(data)}")
+
+    key = normalize_text(data[0])
+    if not key.strip():
+        raise ValueError(f"record {index}: key cannot be empty")
+
+    tags = data[3] if len(data) == 4 else ()
+    return Record(
+        key,
+        normalize_text(data[1]),
+        normalize_text(data[2]),
+        normalize_tags(tags, index),
+    )
+
+
+def record_from_data(data, index):
+    if isinstance(data, dict):
+        return record_from_mapping(data, index)
+    if isinstance(data, (list, tuple)):
+        return record_from_sequence(data, index)
+    raise ValueError(f"record {index}: expected an object or list, got {type(data).__name__}")
+
+
+def load_json_records(path):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict):
+        if "records" not in data:
+            raise ValueError("JSON input must be a list or an object with a 'records' list")
+        data = data["records"]
+    if not isinstance(data, list):
+        raise ValueError("JSON input must contain a list of records")
+    return [record_from_data(item, index) for index, item in enumerate(data)]
+
+
+def load_csv_records(path):
+    with path.open("r", encoding="utf-8-sig", newline="") as file:
+        reader = csv.DictReader(file)
+        if reader.fieldnames is None:
+            raise ValueError("CSV input must include a header row")
+        required_fields = {"key", "source", "translation"}
+        missing = sorted(required_fields - set(reader.fieldnames))
+        if missing:
+            raise ValueError(f"CSV input missing required column(s): {', '.join(missing)}")
+        return [record_from_mapping(row, index) for index, row in enumerate(reader)]
+
+
+def load_records(path_text):
+    path = Path(path_text)
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        return load_json_records(path)
+    if suffix == ".csv":
+        return load_csv_records(path)
+    raise ValueError("input file must use .json or .csv")
+
+
 def print_record(record, index=None):
     prefix = f"[{index}] " if index is not None else ""
     print(f"{prefix}record id={id(record)} type={type(record).__name__}")
@@ -68,16 +165,20 @@ def parse_format_fields(text):
     names = []
     errors = []
 
+    def field_marker(field_name, format_spec, conversion):
+        marker = "{}" if field_name == "" else field_name
+        if conversion:
+            marker = f"{marker}!{conversion}"
+        if format_spec:
+            marker = f"{marker}:{format_spec}"
+        return marker
+
     def collect_fields(source):
         try:
             fields = FORMATTER.parse(source)
-            for _, field_name, format_spec, _ in fields:
+            for _, field_name, format_spec, conversion in fields:
                 if field_name is not None:
-                    if field_name == "":
-                        names.append("{}")
-                    else:
-                        root_name = field_name.split(".", 1)[0].split("[", 1)[0]
-                        names.append(root_name)
+                    names.append(field_marker(field_name, format_spec, conversion))
                 if format_spec:
                     collect_fields(format_spec)
         except ValueError as error:
@@ -142,12 +243,28 @@ def placeholder_counts(placeholders):
     return dict(sorted(Counter(placeholders).items()))
 
 
+def percent_placeholder_summary(placeholders):
+    named = []
+    positional = []
+    for placeholder in placeholders:
+        if placeholder.startswith("%("):
+            named.append(placeholder)
+        else:
+            positional.append(placeholder)
+    return {
+        "named": placeholder_counts(named),
+        "positional": positional,
+    }
+
+
 def placeholder_report(text):
     fields, errors = parse_format_fields(text)
+    percent_fields = percent_placeholders(text)
     return {
         "format_fields": fields,
         "format_errors": errors,
-        "percent_fields": percent_placeholders(text),
+        "percent_fields": percent_fields,
+        "percent_summary": percent_placeholder_summary(percent_fields),
     }
 
 
@@ -176,11 +293,11 @@ def placeholder_issues(record):
             f"translation={placeholder_counts(translated_report['format_fields'])}"
         )
 
-    if source_report["percent_fields"] != translated_report["percent_fields"]:
+    if source_report["percent_summary"] != translated_report["percent_summary"]:
         issues.append(
             "percent placeholder mismatch: "
-            f"source={source_report['percent_fields']} "
-            f"translation={translated_report['percent_fields']}"
+            f"source={source_report['percent_summary']} "
+            f"translation={translated_report['percent_summary']}"
         )
 
     return issues
@@ -188,7 +305,7 @@ def placeholder_issues(record):
 
 def record_issues(record, max_length):
     issues = []
-    if record.translation == "":
+    if not record.translation.strip():
         issues.append("empty translation")
     if len(record.translation) > max_length:
         issues.append(f"translation too long: {len(record.translation)} > {max_length}")
@@ -210,6 +327,42 @@ def issue_report(records, max_length):
         if issues:
             report.append((index, record, issues))
     return report
+
+
+def record_to_dict(record):
+    return {
+        "key": record.key,
+        "source": record.source,
+        "translation": record.translation,
+        "tags": list(record.tags),
+    }
+
+
+def issue_report_data(records, max_length, source_name):
+    problems = issue_report(records, max_length)
+    return {
+        "source": source_name,
+        "max_length": max_length,
+        "records_checked": len(records),
+        "duplicate_keys": duplicate_keys(records),
+        "issue_count": len(problems),
+        "issues": [
+            {
+                "index": index,
+                "record": record_to_dict(record),
+                "issues": issues,
+            }
+            for index, record, issues in problems
+        ],
+    }
+
+
+def dump_issue_report_json(data, output_path=None):
+    text = json.dumps(data, ensure_ascii=False, indent=2)
+    if output_path:
+        Path(output_path).write_text(text + "\n", encoding="utf-8")
+    else:
+        print(text)
 
 
 def print_issue_report(records, max_length):
@@ -273,15 +426,39 @@ def run_shared_tags_demo():
     print("Rule: namedtuple/tuple freezes slots, not the mutable object stored in a slot.")
 
 
-def run_demo(max_length, sort_by=None, issues_only=False):
-    records = demo_records()
+def run_demo(
+    max_length,
+    sort_by=None,
+    issues_only=False,
+    input_path=None,
+    report_json=False,
+    json_output=None,
+):
+    if input_path:
+        records = load_records(input_path)
+        source_name = input_path
+    else:
+        records = demo_records()
+        source_name = "built-in demo"
+
     if sort_by:
         records = sorted_records(records, sort_by)
+
+    if report_json or json_output:
+        data = issue_report_data(records, max_length, source_name)
+        if json_output:
+            dump_issue_report_json(data, json_output)
+        if report_json:
+            dump_issue_report_json(data)
+        return
+
     if not issues_only:
         section("Localization record collection")
         print_collection(records)
     section("Issue report")
     print_issue_report(records, max_length)
+    if issues_only or not records:
+        return
     section("Unpacking one record")
     key, source, translation, tags = records[0]
     print("key         ->", key)
@@ -296,7 +473,10 @@ def run_demo(max_length, sort_by=None, issues_only=False):
 
 def build_parser():
     parser = argparse.ArgumentParser(description="Observe and check localization records.")
-    parser.add_argument("--issues-only", action="store_true", help="Only print records with issues.")
+    parser.add_argument("--issues-only", action="store_true", help="Only print the issue report.")
+    parser.add_argument("--input", help="Read records from a .json or .csv file instead of built-in demo data.")
+    parser.add_argument("--report-json", action="store_true", help="Print the issue report as structured JSON.")
+    parser.add_argument("--json-output", help="Write the structured JSON issue report to this file.")
     parser.add_argument("--copy-demo", action="store_true", help="Show shallow/deep copy behavior.")
     parser.add_argument("--shared-tags-demo", action="store_true", help="Show mutable object inside tuple record.")
     parser.add_argument(
@@ -318,7 +498,17 @@ def main(argv=None):
     if args.shared_tags_demo:
         run_shared_tags_demo()
         return
-    run_demo(args.max_length, args.sort_by, args.issues_only)
+    try:
+        run_demo(
+            args.max_length,
+            args.sort_by,
+            args.issues_only,
+            args.input,
+            args.report_json,
+            args.json_output,
+        )
+    except (OSError, ValueError, csv.Error, json.JSONDecodeError) as error:
+        parser.error(str(error))
 
 
 if __name__ == "__main__":
