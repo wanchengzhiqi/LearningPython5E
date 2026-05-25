@@ -1,0 +1,8 @@
+{
+  "menu.start": "开始游戏",
+  "menu.quit": "退出",
+  "item.potion": "药水 x{amount}",
+  "dialog.line": "第1行\\n第2行",
+  "quest.long": "在月亮升起之前，沿着旧城门旁边的小路找到那张遗失的地图。",
+  "debug.unused": "调试文本"
+}

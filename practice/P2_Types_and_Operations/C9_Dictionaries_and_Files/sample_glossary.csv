@@ -1,0 +1,6 @@
+source,target,note
+Start,开始,Menu verb
+Quit,退出,Menu verb
+Options,选项,Menu noun
+Potion,药水,Item noun
+map,地图,Quest noun

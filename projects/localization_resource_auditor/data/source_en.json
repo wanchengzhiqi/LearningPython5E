@@ -1,0 +1,8 @@
+{
+  "menu.start": "Start",
+  "menu.quit": "Quit",
+  "menu.options": "Options",
+  "item.potion": "Potion x{count}",
+  "dialog.line": "Line 1\nLine 2",
+  "quest.long": "Find the lost map before the moon rises."
+}
