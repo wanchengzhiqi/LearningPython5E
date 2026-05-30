@@ -4688,3 +4688,1220 @@ file object open() 返回的 I/O 接口，不是路径字符串本身
 5. JSON object 文本不是 Python dict；解析后才得到新的 Python 对象结构。
 6. 路径字符串只是位置描述；文件对象才是打开后的读写接口。
 ```
+
+### 11.1 字典的本质：名字绑定、映射对象、键值引用
+
+字典首先是一个对象。名字只是绑定这个对象：
+
+```python
+d = {"menu.start": "Start"}
+alias = d
+alias["menu.quit"] = "Quit"
+print(d)  # {'menu.start': 'Start', 'menu.quit': 'Quit'}
+```
+
+这段代码里：
+
+```tex
+d 和 alias 绑定同一个字典对象。
+alias["menu.quit"] = "Quit" 修改的是字典对象本体。
+因此通过 d 观察到的也是修改后的同一个字典对象。
+```
+
+字典保存的不是“键文本和值文本本身的复制品”，而是键对象和值对象的引用：
+
+```python
+tags = []
+entry = {"menu.start": tags, "menu.quit": tags}
+
+entry["menu.start"].append("checked")
+print(entry)
+
+entry["menu.quit"] = ["rebound"]
+print(entry)
+print(tags)
+```
+
+应按对象模型解释：
+
+```tex
+entry["menu.start"].append("checked")
+    -> 先通过字典查到值对象
+    -> 这个值对象是 tags 绑定的同一个列表对象
+    -> append 原地修改列表对象本体
+
+entry["menu.quit"] = ["rebound"]
+    -> 修改字典对象的映射关系
+    -> 让 "menu.quit" 这个键改为指向一个新列表对象
+    -> 不会修改旧的 tags 列表对象
+```
+
+常见误区：
+
+```tex
+误区1：把 d[k] = v 说成“修改 v”。
+修正：它修改字典对象的映射关系，让 key 对应到新的 value 引用。
+
+误区2：把 d[k].append(x) 说成“修改字典映射”。
+修正：它通常不替换字典中的 value 引用，而是修改这个 value 引用指向的可变对象。
+
+误区3：看到两个键对应的显示内容一样，就以为没有共享引用风险。
+修正：要看对象图。多个键完全可能指向同一个可变值对象。
+```
+
+工程习惯：
+
+```tex
+1. 用 dict 表达 key -> value 的业务映射，例如资源 key -> 翻译文本。
+2. 字典的 value 若是 list/dict/set，要主动检查是否会被多处共享。
+3. 若希望“读不到就创建列表并存回字典”，用 defaultdict(list) 或 setdefault。
+4. 若只是“读不到就临时给默认值”，用 get，但不要误以为默认值会被存回字典。
+```
+
+### 11.2 可哈希、相等性、键去重和键对象保留
+
+字典键必须可哈希。更准确地说，字典查找和去重依赖两步协作：
+
+```tex
+1. hash(key) 决定候选位置。
+2. == 判断候选键是否与新键相等。
+```
+
+因此：
+
+```python
+d = {}
+d[1.0] = "float"
+d[True] = "bool"
+d[1] = "int"
+
+print(d)             # {1.0: 'int'}
+print(list(d.keys()))  # [1.0]
+```
+
+关键点：
+
+```tex
+1 == 1.0 == True 为 True。
+hash(1) == hash(1.0) == hash(True) 也为 True。
+所以它们在字典键语义上冲突。
+字典保留第一次插入的键对象引用，这里保留 1.0。
+后续赋值只更新这个保留键对象对应的值引用。
+```
+
+不要把键去重说成靠 `is`：
+
+```python
+a = ("zh_CN", "menu.start")
+d = {a: "开始"}
+
+print(d[("zh_CN", "menu.start")])  # 开始
+print(a == ("zh_CN", "menu.start"))  # True
+```
+
+即使两个元组对象不是同一个对象，只要它们相等且哈希值相同，就能作为同一个字典键查找。
+
+自定义可哈希对象的核心合同：
+
+```tex
+如果 a == b，那么必须 hash(a) == hash(b)。
+如果 hash(a) == hash(b)，不要求 a == b。
+```
+
+第一个条件是硬性语义合同。违反它会破坏 dict/set：
+
+```python
+class BadKey:
+    def __init__(self, text, salt):
+        self.text = text
+        self.salt = salt
+
+    def __eq__(self, other):
+        return isinstance(other, BadKey) and self.text == other.text
+
+    def __hash__(self):
+        return hash((self.text, self.salt))  # 错：salt 没参与 __eq__
+
+
+a = BadKey("menu.start", 1)
+b = BadKey("menu.start", 2)
+
+print(a == b)              # True
+print(hash(a) == hash(b))  # 通常是 False
+
+d = {a: "Start", b: "Begin"}
+print(len(d))              # 可能是 2，语义已经坏了
+```
+
+正确写法是：参与 `__eq__` 的稳定字段，也一致参与 `__hash__`：
+
+```python
+class LocKey:
+    def __init__(self, namespace, name):
+        self.namespace = namespace
+        self.name = name
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, LocKey)
+            and self.namespace == other.namespace
+            and self.name == other.name
+        )
+
+    def __hash__(self):
+        return hash((self.namespace, self.name))
+```
+
+工程规则：
+
+```tex
+1. 作为 dict key / set element 的对象，参与 hash 和 eq 的字段必须稳定。
+2. 不要用会变化的业务字段计算 __hash__，否则对象插入字典后再变，会导致查找、删除、去重混乱。
+3. dataclass 场景中，若对象要可哈希，优先考虑 frozen=True 或只用不可变稳定字段生成哈希。
+4. 哈希相同但值不等是合法碰撞；字典会继续用 == 区分，只是性能可能变差。
+5. 哈希碰撞必须被允许，因为哈希值空间有限，而可创建对象理论上无限，碰撞不可避免。
+```
+
+关于 `frozenset` 的精确表述：
+
+```python
+good = frozenset({"menu.start", "menu.quit"})
+print(hash(good))
+
+bad = frozenset([["menu.start"]])  # TypeError: unhashable type: 'list'
+```
+
+更准确地说：
+
+```tex
+frozenset 是不可变集合类型，通常可作为字典键；
+但它不能包含不可哈希元素，frozenset 并不会把内部元素“变得可哈希”。
+```
+
+### 11.3 插入顺序、覆盖、字典相等性和工程输出稳定性
+
+Python 3.7+ 中，字典保留插入顺序。这里的顺序指键第一次成功进入字典的顺序：
+
+```python
+d = {}
+d["b"] = 2
+d["a"] = 1
+d["b"] = 20
+
+print(d)           # {'b': 20, 'a': 1}
+print(list(d))     # ['b', 'a']
+```
+
+要点：
+
+```tex
+更新已有键的值，不会把这个键移动到最后。
+删除后重新插入，则会按新的插入时机进入顺序。
+```
+
+但字典相等性不看插入顺序：
+
+```python
+a = {"x": 1, "y": 2}
+b = {"y": 2, "x": 1}
+
+print(a == b)      # True
+print(list(a))     # ['x', 'y']
+print(list(b))     # ['y', 'x']
+```
+
+工程规则：
+
+```tex
+1. dict 顺序适合让输出更稳定、更接近输入。
+2. 若报告、测试快照、命令行输出需要完全稳定，仍建议显式 sorted(...)。
+3. set 不保证保留输入顺序，集合差集/交集结果用于报告时通常要 sorted(...)。
+4. dict 相等性用于比较映射内容；list 相等性用于比较顺序和元素内容。
+```
+
+### 11.4 字典常用方法：返回值和修改对象要分开看
+
+字典方法不能只背名字，要同时看两件事：
+
+```tex
+1. 它是否修改字典对象本体？
+2. 它的返回值是什么？
+```
+
+常用方法速查：
+
+| 方法 | 是否修改字典 | 返回值 | 常见坑 |
+| --- | --- | --- | --- |
+| `d.get(key, default)` | 否 | 找到则返回值，否则返回 default | default 不会被自动存入字典 |
+| `d.setdefault(key, default)` | 缺 key 时会修改 | 找到则返回原值，否则存入并返回 default | default 表达式调用前已求值 |
+| `d.update(other)` | 是 | `None` | 不要写 `d = d.update(...)` |
+| `d.pop(key)` | 是 | 被删除的值 | 缺 key 且无默认值会 `KeyError` |
+| `d.copy()` | 否，返回新外层字典 | 浅拷贝字典 | 共享 key/value 引用 |
+| `dict.fromkeys(keys, value)` | 返回新字典 | 新字典 | value 是同一个对象引用，会被所有键共享 |
+
+关于默认参数表达式的求值时机：
+
+```python
+def make_default():
+    print("created")
+    return []
+
+d = {"a": [1]}
+
+value = d.get("a", make_default())
+print(value)
+```
+
+输出会包含 `created`。原因不是 `get` 找不到键，而是函数调用前必须先把所有实参表达式求值。
+
+同理：
+
+```python
+d.setdefault("a", [])
+```
+
+每次执行都会先创建一个空列表对象，只是键已存在时这个新列表不会被存入字典。
+
+`dict.fromkeys()` 的共享默认值陷阱：
+
+```python
+d = dict.fromkeys(["a", "b"], [])
+d["a"].append("x")
+print(d)  # {'a': ['x'], 'b': ['x']}
+```
+
+修正写法：
+
+```python
+d = {key: [] for key in ["a", "b"]}
+```
+
+工程习惯：
+
+```tex
+1. 累积分组：defaultdict(list) 最清晰。
+2. 偶尔缺省读取：get 更合适。
+3. 缺省时创建并存入：setdefault 可以用，但注意默认对象表达式总会先求值。
+4. 批量合并：update 原地修改；若需要新字典，用 {**a, **b} 或 a | b。
+5. 任何返回 None 的原地修改方法，都不要链式赋值给原变量。
+```
+
+### 11.5 视图对象、快照和集合运算
+
+`keys()`、`values()`、`items()` 返回视图对象，不是普通列表：
+
+```python
+d = {"a": 1}
+keys = d.keys()
+items = d.items()
+snapshot = list(keys)
+
+d["b"] = 2
+d["a"] = 10
+
+print(keys)      # dict_keys(['a', 'b'])
+print(items)     # dict_items([('a', 10), ('b', 2)])
+print(snapshot)  # ['a']
+```
+
+核心区别：
+
+```tex
+视图对象动态连接原字典。
+list(view) 创建的是当时迭代出来的列表快照。
+快照列表没有继续连接原字典的能力。
+```
+
+集合运算边界：
+
+```python
+d = {"a": 1, "b": 2}
+
+print(d.keys() & {"a", "c"})       # {'a'}
+print(d.items() & {("a", 1)})      # {('a', 1)}
+```
+
+但：
+
+```tex
+keys 视图支持集合式操作，因为字典键必须唯一且可哈希。
+items 视图只有在条目可哈希时才适合集合式操作；若 value 不可哈希，可能报错。
+values 视图通常不支持集合式操作，因为字典值不要求唯一，也不要求可哈希。
+```
+
+`for key in d:` 和 `for key in d.keys():`
+
+```tex
+通常都按字典键迭代，结果很接近。
+但它们不是任何意义上都完全等价：
+1. for key in d 不创建 keys 视图对象。
+2. d.keys() 返回的视图对象可被保存、做成员测试和集合运算。
+3. 二者在迭代期间遇到字典大小变化时，都可能触发 RuntimeError。
+4. 若代码需要表达“我要一个键视图”，写 d.keys()；若只是遍历键，for key in d 更简洁。
+```
+
+### 11.6 迭代期间修改可变对象：dict、set、list、file 的差异
+
+字典和集合在迭代期间改变大小，通常会报错：
+
+```python
+d = {"a": 1, "b": 2}
+
+for key in d:
+    print(key)
+    d["c"] = 3
+```
+
+典型结果是：
+
+```tex
+RuntimeError: dictionary changed size during iteration
+```
+
+这是因为 dict/set 的迭代器依赖内部哈希表结构。大小变化会让迭代状态失去可靠含义。
+
+列表不同：
+
+```python
+items = [1, 2, 3]
+
+for item in items:
+    print(item)
+    items.append(99)
+```
+
+列表迭代期间修改大小通常不报错，但更危险：
+
+```tex
+可能跳过元素。
+可能重复处理元素。
+可能无限循环。
+代码读者很难判断你是否有意这样做。
+```
+
+文件对象又是另一类对象。文件迭代按流读取，核心风险不是“容器大小变化”，而是：
+
+```tex
+1. 迭代会消耗当前游标之后的内容。
+2. 读写同一个文件对象会改变游标和缓冲状态。
+3. 一边读一个文件一边改同一个文件，容易得到难以预测的结果。
+```
+
+工程规避：
+
+```python
+# 删除或新增 dict 项：先做快照
+for key in list(d):
+    if should_delete(key):
+        del d[key]
+
+# 过滤列表：创建新列表
+items = [item for item in items if keep(item)]
+
+# 文件转换：输入文件和输出文件分开
+with open("input.txt", "r", encoding="utf-8") as src:
+    lines = src.readlines()
+
+with open("output.txt", "w", encoding="utf-8") as dst:
+    dst.writelines(transform(line) for line in lines)
+```
+
+### 11.7 浅拷贝、深拷贝、嵌套可变对象和 namedtuple
+
+字典浅拷贝的精确说法：
+
+```tex
+浅拷贝会创建新的外层字典映射表；
+表项里的 key 引用和 value 引用仍指向原对象。
+共享的是 key/value 对象引用，不是两个外层字典的映射关系本身。
+```
+
+例子：
+
+```python
+d = {"menu.start": {"text": "Start", "tags": []}}
+copy_d = d.copy()
+
+copy_d["menu.start"]["tags"].append("checked")
+print(d)
+
+copy_d["menu.start"] = {"text": "Begin", "tags": []}
+print(d)
+print(copy_d)
+```
+
+解释：
+
+```tex
+第一步 append 修改共享的内层列表对象，所以 d 和 copy_d 都能观察到。
+第二步替换 copy_d 外层字典中 "menu.start" 对应的 value 引用。
+这不会修改 d 的外层映射，也不会修改旧的内层字典对象。
+```
+
+`namedtuple` 的边界和元组一致：
+
+```python
+from collections import namedtuple
+
+Resource = namedtuple("Resource", "label mapping pairs")
+r = Resource("source", {"a": "A"}, [("a", "A")])
+
+r.mapping["a"] = "B"
+r.pairs.append(("b", "C"))
+
+print(r.mapping)  # {'a': 'B'}
+print(r.pairs)    # [('a', 'A'), ('b', 'C')]
+```
+
+但：
+
+```python
+r.mapping = {}
+```
+
+会报错。因为 namedtuple 实例的字段槽位引用不可替换，但字段引用指向的可变对象仍可原地修改。
+
+工程规则：
+
+```tex
+1. namedtuple 适合表达字段结构稳定的记录。
+2. 若字段值是 list/dict/set，记录外层稳定不等于内部数据不可变。
+3. _replace() 创建新 namedtuple 实例，未替换字段复用原引用；它不是深拷贝。
+4. copy.deepcopy() 用于隔离嵌套可变对象，但通常复用字符串、数字等不可变原子对象。
+```
+
+### 11.8 Counter、defaultdict、set 与 dict 的协作边界
+
+`set` 很像“只关心 key 的容器”，但它不是 dict：
+
+```tex
+dict 关心 key -> value 映射。
+set 关心唯一元素和集合运算。
+Counter 关心元素 -> 次数。
+defaultdict 关心缺 key 时如何自动创建默认值。
+```
+
+游戏本地化资源审计中常见组合：
+
+```python
+from collections import Counter, defaultdict
+
+pairs = [
+    ("menu.start", "Start"),
+    ("menu.start", "Begin"),
+    ("menu.quit", "Quit"),
+]
+
+mapping = dict(pairs)
+counts = Counter(key for key, _ in pairs)
+
+issues_by_key = defaultdict(list)
+for key, count in counts.items():
+    if count > 1:
+        issues_by_key[key].append(f"duplicate: {count}")
+
+print(mapping)       # {'menu.start': 'Begin', 'menu.quit': 'Quit'}
+print(counts)        # Counter({'menu.start': 2, 'menu.quit': 1})
+print(issues_by_key)
+```
+
+为什么同时保留 `pairs` 和 `mapping`：
+
+```tex
+mapping 适合快速按 key 查最终值。
+pairs 保留原始顺序和重复 key 证据。
+Counter 从 pairs 统计重复 key。
+如果只保留普通 dict，重复 key 的早期值已经丢失。
+```
+
+集合适合缺失 key 检查：
+
+```python
+source_keys = {"menu.start", "menu.quit", "menu.options"}
+target_keys = {"menu.start", "menu.quit"}
+
+missing = sorted(source_keys - target_keys)
+print(missing)  # ['menu.options']
+```
+
+工程规则：
+
+```tex
+1. 检查缺失、额外、共同 key，用 set。
+2. 输出报告时用 sorted(...) 把集合结果转成稳定列表。
+3. 统计重复 key，用 Counter，而不是让 dict 静默覆盖。
+4. 分组收集问题，用 defaultdict(list)。
+5. JSON 输出前，Counter 可转 dict，set 必须转 list 或其它 JSON 支持结构。
+```
+
+### 11.9 文件边界：路径字符串、Path、文件对象、外部文件内容
+
+文件相关概念至少分四层：
+
+```tex
+路径字符串 / Path 对象
+    -> 描述外部文件在哪里
+
+文件对象
+    -> open() 返回的 I/O 接口对象
+    -> 有游标、模式、编码、缓冲、关闭状态
+
+文本 str / 字节 bytes
+    -> Python 语言层参与运算的对象
+
+磁盘文件内容
+    -> 外部世界保存的字节序列
+```
+
+路径不是文件对象：
+
+```python
+path = "report.json"
+
+# 错误：path 是 str，不是带 write() 方法的文件对象
+# json.dump({"A": 1}, path)
+
+import json
+
+with open(path, "w", encoding="utf-8") as f:
+    json.dump({"A": 1}, f, ensure_ascii=False)
+```
+
+文件对象是有状态对象：
+
+```python
+with open("demo.txt", "w+", encoding="utf-8") as f:
+    print(f.closed)  # False
+    f.write("ABC")
+    f.seek(1)
+    f.write("Z")
+```
+
+写入不是“替换整个文件内容”的抽象语义，而是从当前文件位置开始写入。上例最终内容类似：
+
+```tex
+AZC
+```
+
+因为只覆盖了位置 1 上的一个字符，没有自动截断后面的 `C`。
+
+写入方法的返回值也要分清：
+
+```python
+from pathlib import Path
+
+path = Path("report.json")
+text = '{"message": "开始"}\n'
+
+result = path.write_text(text, encoding="utf-8")
+print(result)  # 写入的字符数
+```
+
+规则：
+
+```tex
+文本模式下 f.write(str) / Path.write_text(str) 返回写入的字符数。
+二进制模式下 f.write(bytes) / Path.write_bytes(bytes) 返回写入的字节数。
+json.dump(...) 写入文件对象，但返回 None。
+```
+
+打开模式要分清：
+
+| 模式 | 主要含义 | 常见用途 |
+| --- | --- | --- |
+| `"r"` | 只读文本，文件必须存在 | 读取配置、资源、日志 |
+| `"w"` | 写文本，打开时截断旧内容 | 生成报告、覆盖输出文件 |
+| `"a"` | 追加文本 | 追加日志 |
+| `"rb"` | 只读二进制 | 图片、压缩包、协议字节 |
+| `"wb"` | 写二进制 | 输出二进制文件 |
+| `"r+"` / `"w+"` | 读写 | 小心游标和截断语义 |
+
+工程习惯：
+
+```tex
+1. 文本文件读写显式写 encoding="utf-8"，尤其是在 Windows 上。
+2. with open(...) as f 管理关闭边界，避免忘记 close。
+3. 修改整个文件内容时，优先读取、生成新内容、整体写回；复杂场景用临时文件替换。
+4. 不要把路径字符串传给需要文件对象的 API，例如 json.dump。
+5. 不要把文件对象当成“文件内容本身”；它是通向外部文件的接口。
+```
+
+文件对象、模块对象和磁盘上的 `.py` 文件也不是一回事：
+
+```tex
+磁盘上的 .py 文件是外部字节资源。
+模块对象是 import 系统执行代码后在 Python 内存中创建的对象，有 __dict__ 等属性。
+文件对象是 open() 创建的 I/O 流对象，用来读写外部资源。
+```
+
+它们的共性是：在 Python 语言层都可以被当作对象引用、传参、保存到容器中。但它们的职责和生命周期完全不同。
+
+### 11.10 StringIO、游标和读写方法
+
+`StringIO` 是内存中的文本流对象，常用于测试或临时拼接文本：
+
+```python
+from io import StringIO
+
+f = StringIO()
+f.write("ABC")
+f.seek(1)
+f.write("Z")
+
+print(f.getvalue())  # AZC
+```
+
+本质：
+
+```tex
+StringIO 不连接磁盘文件。
+它模拟文本文件对象常见接口，例如 read/write/seek/tell。
+它内部管理一段文本缓冲区和一个当前位置。
+```
+
+`getvalue()` 的特点：
+
+```tex
+1. 返回当前缓冲区的全部文本 str。
+2. 不受当前游标位置限制。
+3. 通常不改变当前游标位置。
+4. 普通磁盘文件对象没有 getvalue()；要查看内容，通常 seek(0) 后 read()，或关闭后用 Path.read_text()。
+```
+
+读写方法要点：
+
+```python
+from io import StringIO
+
+f = StringIO("A\nB\nC")
+
+print(f.read(2))      # 读取 2 个字符，不是 2 个字节
+print(f.readline())   # 读取当前位置到本行结束
+print(f.readlines())  # 返回剩余行组成的列表
+```
+
+`writelines()` 不会自动添加换行：
+
+```python
+f = StringIO()
+result = f.writelines(["A", "B", "C"])
+
+print(result)       # None
+print(f.getvalue()) # ABC
+```
+
+若需要每行换行，元素本身要带 `\n`：
+
+```python
+f = StringIO()
+f.writelines(["A\n", "B\n", "C\n"])
+print(f.getvalue())
+```
+
+工程用途：
+
+```tex
+1. 测试 json.dump/csv.writer 这类“需要文件对象”的 API。
+2. 避免为了测试而真的创建磁盘文件。
+3. 构造文本报告时先写入内存，再统一检查结果。
+4. 注意 StringIO 是文本流；二进制内存流对应 BytesIO。
+```
+
+### 11.11 str、bytes、encoding：语言层操作不是字节级操作
+
+阶段中一个重要纠偏是：
+
+```tex
+底层存储最终离不开字节；
+但 Python 语言层操作的是对象和对象协议，不等于每个操作都按字节进行。
+```
+
+例子：
+
+```python
+text = "启动"
+raw = text.encode("utf-8")
+
+print(len(text))  # 2
+print(len(raw))   # 6
+print(type(text).__name__)  # str
+print(type(raw).__name__)   # bytes
+```
+
+解释：
+
+```tex
+str 是 Unicode 文本序列，len(str) 按字符层计算。
+bytes 是字节序列，len(bytes) 按字节数计算。
+"启动" 在 UTF-8 中通常每个中文字符占 3 个字节，所以 encode 后长度为 6。
+```
+
+`StringIO("启动").read(1)` 读的是 1 个字符。至于 CPython 内部如何在物理内存中表示字符串，是实现层细节。语言层规则是：
+
+```tex
+对象支持什么操作，取决于对象类型和方法协议。
+str 的 read/len/slice 等文本接口按字符层工作。
+bytes 的 read/len/slice 等二进制接口按字节层工作。
+```
+
+编码边界：
+
+```tex
+写文本文件：
+Python str -> encoding 编码 -> 磁盘 bytes
+
+读文本文件：
+磁盘 bytes -> encoding 解码 -> Python str
+
+读写二进制文件：
+Python bytes <-> 磁盘 bytes
+```
+
+Windows 工程习惯：
+
+```tex
+1. 不要依赖 open() 默认编码；本机环境曾观察到默认文件编码为 cp936。
+2. 源码中的 Unicode、Python 内存中的 str、终端显示、磁盘文件编码，是四层不同问题。
+3. 终端中文乱码不一定代表文件坏了，可能只是显示环境编码不一致。
+4. 读带 BOM 的 UTF-8 文件时，必要时使用 encoding="utf-8-sig"。
+```
+
+### 11.12 JSON：Python 对象、JSON 文本、文件字节三层边界
+
+JSON 相关操作要分三层：
+
+```tex
+Python 内部对象模型
+    dict/list/str/int/float/bool/None 等
+
+JSON 文本
+    json.dumps(...) 返回的 str
+
+文件或网络边界
+    str 按 encoding 编码后成为 bytes
+```
+
+`dumps` 和 `dump` 的边界：
+
+```python
+import json
+from io import StringIO
+
+data = {"text": "启动"}
+
+text = json.dumps(data, ensure_ascii=False)
+print(type(text).__name__)  # str
+
+f = StringIO()
+result = json.dump(data, f, ensure_ascii=False)
+print(result)       # None
+print(f.getvalue()) # {"text": "启动"}
+```
+
+应记住：
+
+```tex
+json.dumps(obj) -> JSON 文本 str。
+json.dump(obj, file_object) -> 把 JSON 文本写入文件对象，返回 None。
+```
+
+`ensure_ascii=False` 不是“无脑参数”，但在 UTF-8 工程文本中很常用：
+
+```python
+data = {"text": "启动"}
+
+a = json.dumps(data)
+b = json.dumps(data, ensure_ascii=False)
+
+print(a)  # {"text": "\u542f\u52a8"}
+print(b)  # {"text": "启动"}
+```
+
+精确说法：
+
+```tex
+ensure_ascii=False 不改变返回类型，返回值仍是 str。
+但它会改变这个 str 的实际内容：非 ASCII 字符会直接出现在 JSON 文本中。
+若输出目标是 UTF-8 文件、人类可读报告、本地化资源，通常适合配合 encoding="utf-8"。
+若输出目标是只接受 ASCII 的旧系统、日志管线或协议，默认 ensure_ascii=True 可能更安全。
+```
+
+JSON 不等于“完整保存 Python 类型系统”：
+
+```python
+data = {"record": ("a", "A")}
+text = json.dumps(data)
+loaded = json.loads(text)
+
+print(loaded)              # {'record': ['a', 'A']}
+print(type(loaded["record"]).__name__)  # list
+```
+
+要点：
+
+```tex
+tuple 可以被编码为 JSON array，但读回来是 list。
+set 不支持直接 JSON 序列化。
+namedtuple 需要先转 dict/list 等 JSON 支持结构。
+dict 的非字符串键在 JSON 边界可能被转换或受限制，不应依赖其保持 Python 键类型。
+```
+
+重复 key 审计必须在普通 dict 折叠前完成：
+
+```python
+import json
+from collections import Counter
+
+text = '{"menu.start": "Start", "menu.start": "Begin", "menu.quit": "Quit"}'
+
+pairs = json.loads(text, object_pairs_hook=list)
+mapping = dict(pairs)
+counts = Counter(key for key, _ in pairs)
+
+print(pairs)
+print(mapping)
+print(counts)
+```
+
+解释：
+
+```tex
+pairs 保留原始键值对顺序和重复 key。
+mapping 表达普通 Python dict 最终映射，重复 key 会被后值覆盖。
+counts 用于审计重复 key。
+```
+
+这正是阶段综合项目保留 `pairs/mapping/duplicate_counts` 三层结构的原因。
+
+### 11.13 CSV：扁平文本表，不保存嵌套对象结构
+
+CSV 的本质是二维文本表：
+
+```tex
+一行代表一条记录。
+一列代表一个字段。
+单元格保存文本。
+CSV 没有 JSON 那样的嵌套 object/array 数据模型。
+```
+
+`csv.writer` 写非字符串对象时，通常会把对象转成字符串：
+
+```python
+import csv
+from io import StringIO
+
+f = StringIO()
+writer = csv.writer(f)
+writer.writerow(["menu.start", ["ui", "main"], {"text": "Start"}])
+
+print(f.getvalue())
+```
+
+这里容易产生的错觉是：“列表被做了两次 `repr()`”。更精确地说：
+
+```tex
+csv 模块需要写出文本字段。
+非字符串字段会被 str(...) 转成文本。
+list 的 str(...) 本来就会显示方括号，并对内部字符串元素使用 repr 风格显示。
+所以看起来像 repr，但 csv 并没有保留 list 对象结构。
+```
+
+为什么字符串没有额外引号：
+
+```tex
+str("abc") 的结果就是 abc，不包含源码字面量中的引号。
+csv.writer 只会在字段包含逗号、换行、引号等需要转义的内容时，按 CSV 规则添加外层引号。
+这些引号是 CSV 格式转义，不是 Python repr 的字符串引号。
+```
+
+工程选择：
+
+```tex
+1. CSV 适合保存扁平记录：key, source, target, length, issue_code。
+2. JSON 适合保存嵌套结构：issues 列表、detail 字典、placeholder 列表。
+3. 若必须在 CSV 单元格保存列表，建议明确约定格式，例如用 JSON 字符串保存该单元格。
+4. 读 CSV 后要假设单元格值是 str，再按业务规则转换 int/bool/list。
+```
+
+### 11.14 阶段综合项目：localization_resource_auditor 的对象模型价值
+
+当前阶段综合项目位于：
+
+```tex
+projects/localization_resource_auditor/
+```
+
+主文件：
+
+```tex
+projects/localization_resource_auditor/localization_auditor.py
+```
+
+项目不是普通“小练习脚本”，而是 Types and Operations 大阶段的收束成果。它把核心对象类型组织成一个工程数据流：
+
+```tex
+资源文件 JSON 文本
+    -> read_text / open 读入 Python str
+    -> json.loads(..., object_pairs_hook=list) 保留 pair list
+    -> Resource 记录保存 label/path/text/pairs/mapping/duplicate_counts
+    -> audit_resources(...) 生成 Issue 列表
+    -> render_text_report(...) 生成给人看的文本报告
+    -> build_json_report(...) 生成给机器读的 dict/list 报告模型
+    -> json.dumps(...) 生成 JSON 文本
+    -> write_text(...) 写入 UTF-8 文件字节
+```
+
+关键对象选型：
+
+| 项目对象 | 类型选择 | 理由 |
+| --- | --- | --- |
+| `pairs` | `list[tuple]` | 保留输入顺序和重复 key 证据 |
+| `mapping` | `dict` | 快速按 key 查最终文本 |
+| `duplicate_counts` | `Counter` | 统计重复 key 次数 |
+| `source_keys/target_keys` | `set` | 做差集、交集、额外 key 检查 |
+| `issues` | `list` | 按顺序保存可排序、可输出的问题记录 |
+| `Issue` / `Resource` | `namedtuple` | 表达字段稳定的记录结构 |
+| `detail` | `dict` | 保存可扩展的结构化问题信息 |
+| JSON report | `dict/list/str/int/bool/None` | 保证可被 JSON 序列化 |
+
+`--observe` 的学习价值：
+
+```tex
+1. 观察 dict 视图和 list 快照的区别。
+2. 观察普通 dict 如何折叠重复 key。
+3. 观察 Counter 如何保留重复 key 统计。
+4. 观察 set 差集如何得到缺失 key。
+5. 观察浅拷贝如何共享内层可变对象。
+6. 观察 str 和 bytes 在编码边界的长度差异。
+7. 观察 JSON report 内部对象模型和输出文本之间的分层。
+```
+
+这个项目的真正收束点：
+
+```tex
+它把“对象模型”从单个表达式层面推进到了工程数据流层面。
+你不再只是预测 print(d)，而是在设计：
+哪些信息需要保留？
+哪些结构适合计算？
+哪些结构适合输出？
+哪些类型必须在文件/JSON/CSV 边界前转换？
+```
+
+### 11.15 Types and Operations 核心对象横向对照表
+
+| 类型 | 可变性 | 顺序性 | 哈希能力 | JSON/文件边界 | 典型工程用途 |
+| --- | --- | --- | --- | --- | --- |
+| `int/float/bool` | 不可变 | 无序列顺序 | 可哈希 | JSON number/bool | 计数、长度、统计、阈值 |
+| `str` | 不可变 | 有序字符序列 | 可哈希 | JSON string；文本文件读写对象 | 文本、key、路径片段、日志消息 |
+| `bytes` | 不可变 | 有序字节序列 | 可哈希 | 二进制文件/网络边界 | 编码后文本、协议、图片、压缩数据 |
+| `list` | 可变 | 有序 | 不可哈希 | JSON array | 工作集合、排序、过滤、报告问题列表 |
+| `tuple` | 槽位不可变 | 有序 | 取决于元素 | JSON array，但往返后变 list | 稳定记录、小型复合 key |
+| `namedtuple` | 字段槽位不可变 | 有序且有字段名 | 取决于字段值 | 需转 dict/list | 可读的稳定记录 |
+| `dict` | 可变 | 保留插入顺序 | 不可哈希 | JSON object 的主要对应物 | 配置、索引、映射、结构化报告 |
+| `set` | 可变 | 不保证输入顺序 | 不可哈希 | 不支持直接 JSON | 去重、交集、差集、成员测试 |
+| `frozenset` | 不可变 | 不保证输入顺序 | 可哈希，元素需可哈希 | 不支持直接 JSON | 不可变集合键、组合条件 |
+| `file object` | 有状态资源对象 | 按流位置读写 | 通常不用于数据键 | 连接 str/bytes 与外部文件 | 读写文件、缓冲、资源管理 |
+
+横向选择规则：
+
+```tex
+1. 需要按 key 查值：dict。
+2. 需要唯一性和集合运算：set。
+3. 需要稳定顺序和可重复元素：list。
+4. 需要固定结构记录：tuple / namedtuple。
+5. 需要人类文本：str。
+6. 需要外部二进制边界：bytes。
+7. 需要跨进程、跨文件保存：先转成 JSON/CSV 等外部格式支持的数据模型。
+8. 需要资源读写：使用 file object，并用 with 管理生命周期。
+```
+
+### 11.16 本阶段你提出过的问题与修正规则
+
+1. 关于 `a == b` 但 `hash(a) != hash(b)`：
+
+   ```tex
+   可以通过错误实现的自定义类构造出来。
+   但这是违反可哈希对象合同的坏对象。
+   对 dict/set 的影响是去重、查找、删除语义都可能混乱。
+   修正规则：参与 __eq__ 的稳定字段必须一致参与 __hash__。
+   ```
+
+2. 关于 `hash(a) == hash(b)` 但 `a != b`：
+
+   ```tex
+   这是合法哈希碰撞。
+   dict/set 会继续用 == 区分对象。
+   它不破坏语义，只可能带来额外比较成本。
+   碰撞必须被允许，因为哈希空间有限，且不同对象可能映射到同一哈希值。
+   ```
+
+3. 关于 `get(key, default)` 和 `setdefault(key, default)`：
+
+   ```tex
+   default 表达式在函数调用前就会求值。
+   所以 d.get(key, []) 和 d.setdefault(key, []) 都会先创建那个 []。
+   区别在于 get 不会把默认值存回字典，setdefault 缺 key 时会存回。
+   ```
+
+4. 关于视图对象：
+
+   ```tex
+   keys/items/values 是动态视图。
+   list(view) 是快照。
+   keys 支持集合运算；items 在条目可哈希时支持；values 通常不支持。
+   ```
+
+5. 关于迭代期间修改：
+
+   ```tex
+   dict/set 改大小通常 RuntimeError。
+   list 通常不报错，但容易跳过、重复或无限循环。
+   file object 是流对象，问题重点在游标、缓冲和读写状态。
+   工程上使用快照、新列表、分离输入输出文件规避。
+   ```
+
+6. 关于 `StringIO`：
+
+   ```tex
+   StringIO 是内存文本流对象，不是路径，也不是磁盘文件。
+   它实现了类似文本文件对象的 read/write/seek 接口。
+   getvalue() 返回全部缓冲文本，不受当前游标限制，也通常不改变游标。
+   ```
+
+7. 关于 `write()` 是否覆盖：
+
+   ```tex
+   write 从当前游标位置写入并推进游标。
+   它会覆盖当前位置之后相同长度的内容，但不会自动截断剩余尾部。
+   open(..., "w") 的截断发生在打开文件时，不是每次 write 时。
+   ```
+
+8. 关于“语言层操作是不是字节级”：
+
+   ```tex
+   底层承载离不开字节。
+   但 Python 语言层按对象类型和协议操作。
+   StringIO(text).read(2) 规定读 2 个字符；BytesIO(data).read(2) 才是读 2 个字节。
+   ```
+
+9. 关于 `ensure_ascii=False`：
+
+   ```tex
+   它不改变 json.dumps 的返回类型，返回仍是 str。
+   但它会改变返回字符串的实际内容。
+   在 UTF-8 文本工程中常用，但不是所有输出管线都无脑适合。
+   ```
+
+10. 关于 CSV 写列表：
+
+    ```tex
+    CSV 单元格是文本字段。
+    非字符串对象通常经 str(...) 变成文本。
+    list 的 str(...) 会使用类似 repr 的元素显示，所以看起来像“多了一层显示形式”。
+    但 CSV 没有保留 list 结构；读回来仍是字符串。
+    ```
+
+11. 关于文件对象是否可变：
+
+    ```tex
+    文件对象是有状态资源对象，有游标、缓冲、关闭状态。
+    write 还会影响外部文件内容。
+    但文件对象不是文件内容本身，也不是模块对象。
+    即使某些文件对象可按身份哈希，也不代表适合作业务数据键。
+    ```
+
+12. 关于 `namedtuple._asdict()`：
+
+    ```tex
+    Python 3.9 中 namedtuple._asdict() 返回普通 dict。
+    旧资料中可能见到 OrderedDict，要以当前 Python 版本为准。
+    ```
+
+### 11.17 阶段测验暴露的薄弱处与修正规则
+
+本阶段测验建议得分为 `96 / 100`，并通过“字典和文件：映射、持久化边界与核心类型收束”小阶段，以及 Types and Operations 大阶段收束验收。扣分点不在主干，而在表述精度和工程边界：
+
+```tex
+薄弱处1：frozenset 可哈希条件说得过宽
+修正：frozenset 是不可变集合类型，但不能包含不可哈希元素；不要说它能让任意元素可哈希。
+
+薄弱处2：浅拷贝中“共享映射关系”的措辞过界
+修正：浅拷贝创建新的外层映射表；共享的是表项中的 key/value 引用。
+
+薄弱处3：文件对象边界措辞不够精确
+修正：open/path.open 负责打开文件并返回文件对象；read 是从已打开的文件对象读取内容。
+
+薄弱处4：JSON 能否恢复 Python 类型说得过宽
+修正：JSON 适合保存 JSON 数据模型支持的嵌套结构，不保证完整恢复 Python 类型语义。
+
+薄弱处5：结构化报告对象选型只说 str 不够完整
+修正：内部报告模型是 dict/list/str/int/bool/None；输出边界才是 JSON 文本 str；写入文件后才是 bytes。
+
+薄弱处6：重复 key 审计数据流需要更早保留 pair list
+修正：普通 json.loads(text) 会折叠重复 key；必须在折叠前用 object_pairs_hook=list 或其它解析策略保留原始键值对。
+```
+
+这次测验确认的强项：
+
+```tex
+1. 能稳定区分对象本体、名字绑定、显示形式和 JSON 文本。
+2. 能解释 dict/set 去重依赖 hash 与 ==，不是 is。
+3. 能预测键覆盖时保留首次键对象、更新值引用。
+4. 能解释视图对象、快照、浅拷贝和嵌套可变对象。
+5. 能说明路径、文件对象、str、bytes、encoding、磁盘字节之间的分层。
+6. 能把阶段项目的数据结构选型和工程目的联系起来。
+```
+
+### 11.18 工程应知应会清单
+
+```tex
+1. 字典是可变映射对象；名字绑定字典，不是拥有字典。
+2. 字典键和值都以对象引用形式保存。
+3. d[k] = v 修改映射关系；d[k].append(x) 修改值对象本体。
+4. 字典键查找和去重依赖 hash 与 ==，不是 is。
+5. 自定义可哈希对象必须满足：a == b -> hash(a) == hash(b)。
+6. 键对象用于哈希和相等性的字段必须稳定。
+7. dict 保留插入顺序，但 set 不保证保留输入顺序。
+8. 需要报告稳定输出时，对 set 结果使用 sorted(...)。
+9. keys/items/values 是动态视图；list(view) 才是快照。
+10. 迭代 dict/set 时不要改变大小；需要修改时先 list(d) 做快照。
+11. get 不存默认值；setdefault 缺 key 时会存默认值；二者默认实参都会先求值。
+12. update 原地修改并返回 None；pop 删除并返回旧值。
+13. dict.copy() 是浅拷贝；新的外层映射表共享 key/value 引用。
+14. dict.fromkeys(keys, []) 会让所有键共享同一个列表对象。
+15. Counter 用于统计重复；defaultdict(list) 用于分组收集。
+16. 路径字符串和 Path 是位置描述；文件对象是 open 后的 I/O 接口。
+17. 文本模式处理 str；二进制模式处理 bytes。
+18. 文本文件读写显式写 encoding="utf-8"。
+19. write 从当前游标写入，不自动截断尾部。
+20. StringIO 是内存文本流，适合测试需要文件对象的 API。
+21. json.dumps 返回 str；json.dump 写入文件对象并返回 None。
+22. ensure_ascii=False 让非 ASCII 字符直接进入 JSON 文本；仍需配合正确文件编码。
+23. JSON object 对应 Python dict，但 JSON 文本不是 Python dict。
+24. tuple 可编码为 JSON array，但反序列化后变 list。
+25. set、Counter、namedtuple、自定义对象输出 JSON 前要转成 JSON 支持结构。
+26. CSV 是扁平文本表，不保存 Python 嵌套对象结构。
+27. 设计审计工具时，普通 dict 适合最终映射，pair list 适合保留重复 key 证据。
+28. 内部模型、显示文本、序列化文本、外部文件字节必须分层说明。
+```
+
+### 11.19 阶段精髓小结
+
+```tex
+1. 字典的核心不是“大括号”，而是可变映射：key -> value。
+2. key 和 value 都是对象引用；共享引用风险仍然存在。
+3. 字典键的唯一性由 hash 与 == 共同维护。
+4. 相等对象必须哈希相等；哈希相等对象不必相等。
+5. 覆盖重复键时，字典保留首次键对象，更新对应值引用。
+6. 原地修改值对象和替换键对应值，是两件不同的事。
+7. 字典视图是动态观察窗口；列表快照是当时状态的保存。
+8. 浅拷贝保护外层映射，不保护内层可变对象。
+9. Counter、defaultdict、set 是围绕映射和集合问题的工程工具。
+10. 文件路径不是文件对象；文件对象不是文件内容本身。
+11. 文本 str 和字节 bytes 是两个层次；encoding 是边界规则。
+12. StringIO/BytesIO 是内存流，不是磁盘文件，但可模拟文件对象接口。
+13. JSON 是文本数据格式，不是 Python 对象系统的完整镜像。
+14. CSV 是扁平表格文本，不适合直接承载复杂嵌套对象。
+15. 阶段项目的核心价值，是把 dict/list/tuple/set/str/bytes/file/JSON/CSV 放进同一条工程数据流。
+16. Types and Operations 的最终收束，是能在任何代码里分清：源码形式、对象创建、名字绑定、对象修改、显示形式、序列化边界和外部字节。
+```
