@@ -16,6 +16,7 @@ dist/
 
 # Virtual Environment
 .venv/
+.venv-py*/
 venv/
 env/
 

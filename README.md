@@ -1,96 +1,71 @@
 # LearningPython5E
 
-本项目是一个围绕 Python 基础学习过程持续演进的个人学习与实践仓库。主要参考书目是《Learning Python 5th Edition》。仓库内容不只是一组完成后的程序，而是把学习旅程具象化后的长期记录：包括学习笔记、章节练习脚本、手工测试模块、阶段性实践成果，以及未来可能逐步完善的自动化测试和更多实践项目。
+本仓库是围绕《Learning Python 5th Edition》持续演进的 Python 学习记录与
+实践空间。它不是某一个应用的源码仓库，也不把代码规模更大的项目默认视为
+更重要的成果。
 
-当前最主要的阶段性实践成果是 `myimporter`，它围绕 Python 导入机制、插件发现、插件运行时和进程隔离展开。
+## 学习阶段模型
 
-## 目录概览
+- **大阶段**：对应书籍中的 `PART`，例如 `P1_Getting_Started`、
+  `P2_Types_and_Operations`。
+- **小阶段**：对应大阶段中的章节，例如
+  `P2_Types_and_Operations/C9_Dictionaries_and_Files`。
+- **阶段成果**：在一个大阶段接近收束时形成的可复盘项目，统一归档到
+  `projects/<PART>/`。
 
-- `notes/`：中文学习笔记，按书籍部分和章节组织，包含截图资源。
-- `practice/`：学习过程中的章节练习脚本、实验脚本和数据文件。
-- `src/myimporter/`：自定义导入器与插件运行时系统。
-- `src/plugins/`：`myimporter` 使用的示例插件和测试模块。
-- `tests/`：目前更偏手工实验脚本，不应默认视为成熟自动化测试套件。
-- `web_ui/`：基于 Flask 的插件管理 Web UI。
-- `cli.py`：通过 socket 与运行时服务交互的命令行入口。
-- `runtime_service.py`：插件运行时 TCP 服务入口。
+## 目录职责
 
-## 当前核心实践：myimporter
-
-`myimporter` 当前包含两条核心能力线：
-
-1. 自定义导入机制
-   - 通过 `src.myimporter.install()` / `uninstall()` 安装或移除自定义 finder。
-   - 使用 `sys.meta_path`、`MetaPathFinder`、`SourceLoader` 和 provider 机制探索 Python 模块查找与加载过程。
-   - 支持默认路径和环境变量路径参与模块查找。
-
-2. 插件运行时
-   - 从 `src/plugins/` 发现包含 `manifest.json` 的插件。
-   - 根据插件依赖关系进行加载排序。
-   - 支持插件加载、激活、停用、重载和状态记录。
-   - 支持子进程运行插件，并通过 socket JSON RPC 与插件 worker 通信。
-   - 提供 Flask Web UI 查看和管理插件状态。
-
-## 环境准备
-
-当前项目曾在 Python `3.9.13` 环境下运行。建议先创建或启用虚拟环境，再安装依赖：
-
-```powershell
-python -m pip install -r requirements.txt
+```text
+LearningPython5E/
+  notes/
+  practice/
+  projects/
+  docs/
+  tests/
+  AGENTS.md
+  README.md
 ```
 
-当前 `requirements.txt` 只记录运行时代码实际使用到的第三方依赖，不包含尚未稳定化的测试工具依赖。
+- `notes/`：中文学习笔记、截图资源和学习画像。
+- `practice/`：按 `PART` 和章节组织的实验、练习、样例数据与阶段测验。
+- `projects/`：按 `PART` 归档的阶段综合实践成果。每个项目自行维护 README、
+  资源文件和专属依赖。
+- `docs/`：仓库治理说明、迁移计划和需要跨阶段复用的文档。
+- `tests/`：历史手工实验脚本。目前不默认视为成熟自动化测试套件。
 
-## 常见运行入口
+仓库根目录不再设置统一 `requirements.txt`。学习笔记和标准库练习不需要共享
+运行时依赖；确有第三方依赖的阶段成果应在自己的项目目录中声明。
 
-启动插件运行时服务：
+## 当前阶段成果
 
-```powershell
-python runtime_service.py
-```
+### P1 Getting Started
 
-通过 CLI 与运行时服务交互：
+- [`myimporter_system`](projects/P1_Getting_Started/myimporter_system/README.md)：
+  自定义导入器与插件运行时系统，用于观察 `sys.meta_path`、模块加载、插件
+  生命周期、依赖排序、子进程边界和 socket JSON RPC。
 
-```powershell
-python cli.py list
-python cli.py reload plugin_a
-```
+### P2 Types and Operations
 
-启动 Web UI：
+- [`localization_resource_auditor`](projects/P2_Types_and_Operations/localization_resource_auditor/README.md)：
+  游戏本地化资源审计 CLI，用于整合字典、集合、列表、元组、文件对象、
+  JSON、CSV、编码边界和结构化报告。
 
-```powershell
-python web_ui\web_ui.py
-```
+## 当前学习进度
 
-Web UI 默认监听 `127.0.0.1:8000`。
+- `P1_Getting_Started`：已完成。
+- `P2_Types_and_Operations`：已通过收束验收。
+- 当前处于跨阶段治理期：完成历史项目梳理、仓库结构调整、路线规划和环境
+  现代化准备后，进入 `P3_Statements_and_Syntax`。
 
-## 插件约定
+## 仓库治理
 
-新增插件通常应放在 `src/plugins/<plugin_name>/` 下，并包含：
+- 文档索引见 [`docs/README.md`](docs/README.md)。
+- 后续学习路线见
+  [`docs/PYTHON_LEARNING_ROADMAP.md`](docs/PYTHON_LEARNING_ROADMAP.md)。
+- Python 环境现代化方案见
+  [`docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md`](docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md)。
+- 仓库结构调整的历史执行记录见
+  [`docs/REPOSITORY_RESTRUCTURE_PLAN.md`](docs/REPOSITORY_RESTRUCTURE_PLAN.md)。
 
-- `manifest.json`
-- 入口模块，例如 `plugin.py`
-- 入口模块中的 `Plugin` 类
-- 可选的 `activate()`、`deactivate()`、`to_dict()` 方法
-
-现有示例插件：
-
-- `plugin_a`：以进程内模式运行，提供示例能力。
-- `plugin_b`：依赖 `plugin_a`，以子进程模式运行。
-
-## 测试说明
-
-当前 `tests/` 目录中的内容更像学习和手工验证脚本，不是稳定的自动化测试套件。
-
-已知情况：
-
-- 当前未把 `pytest` 写入 `requirements.txt`。
-- `tests/test_for_myimporter.py` 会调用 `src.myimporter.install()`，并尝试导入外部路径中的模块，不能默认作为普通 pytest 测试运行。
-- 后续如果测试逐步自动化，应再补充测试依赖和统一运行方式。
-
-## 注意事项
-
-- `src/myimporter/utils/settings.py` 中包含当前本机项目路径、端口、模式语义和环境变量名等全局配置，改动前应谨慎评估影响。
-- 当前 Python 环境可能存在全局 `sitecustomize.py`，启动 Python 时出现相关日志不一定来自项目内部测试。
-- Windows 命令提示符或 PowerShell 中的中文乱码通常是终端默认编码不是 UTF-8 导致的显示问题，不应据此判断源文件内容损坏。
-- 本项目仍处于学习推进中的“进行时”，不要把现有结构误读为最终形态。
+Windows 终端中出现中文乱码时，应先考虑终端默认编码问题，不要据此批量重写
+源文件。运行 Python 验证后产生的 `__pycache__/` 和 `.pyc` 文件属于忽略项。

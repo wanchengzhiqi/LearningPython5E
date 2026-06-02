@@ -42,10 +42,10 @@ python practice\P2_Types_and_Operations\C9_Dictionaries_and_Files\06_core_type_s
 阶段综合项目：
 
 ```powershell
-python projects\localization_resource_auditor\localization_auditor.py
-python projects\localization_resource_auditor\localization_auditor.py --observe
-python projects\localization_resource_auditor\localization_auditor.py --format json
-python projects\localization_resource_auditor\localization_auditor.py --source projects\localization_resource_auditor\data\source_en.json --target projects\localization_resource_auditor\data\target_zh.json --glossary projects\localization_resource_auditor\data\glossary.csv --max-length 42
+python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py
+python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py --observe
+python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py --format json
+python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py --source projects\P2_Types_and_Operations\localization_resource_auditor\data\source_en.json --target projects\P2_Types_and_Operations\localization_resource_auditor\data\target_zh.json --glossary projects\P2_Types_and_Operations\localization_resource_auditor\data\glossary.csv --max-length 42
 ```
 
 学习主线：

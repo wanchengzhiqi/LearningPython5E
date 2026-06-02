@@ -1,0 +1,14 @@
+{
+  "name": "plugin_b",
+  "entry": "plugin",
+  "version": "1.2",
+  "description": "Subprocess example plugin that depends on plugin_a.",
+  "execution_mode": "subprocess",
+  "depends": ["plugin_a"],
+  "provides": ["worker-status"],
+  "permissions": {
+    "filesystem": "read",
+    "network": false,
+    "subprocess": false
+  }
+}

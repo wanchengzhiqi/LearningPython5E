@@ -4630,6 +4630,172 @@
     20. 阶段迷你项目的核心价值，是把列表、元组、namedtuple、dict、Counter、JSON/CSV和本地化检查放进同一个对象模型中理解。
     ```
 
+    ### 10.15 阶段后专题：切片规范化、负步长扩展切片与 `L * 1`
+
+    #### 10.15.1 边界规范化不会自动纠正方向
+
+    对长度为 `4` 的列表：
+
+    ```python
+    L = [0, 1, 2, 3]
+    ```
+
+    以下三个普通切片读取结果都是空列表：
+
+    ```python
+    print(L[3:-1000])  # []
+    print(L[3:1])      # []
+    print(L[3:3])      # []
+    ```
+
+    但这不意味着三个切片被规范化成了完全相同的对象。可以用 `slice.indices()` 观察：
+
+    ```python
+    print(slice(3, -1000).indices(len(L)))  # (3, 0, 1)
+    print(slice(3, 1).indices(len(L)))      # (3, 1, 1)
+    print(slice(3, 3).indices(len(L)))      # (3, 3, 1)
+    ```
+
+    它们的共同点是：默认 `step == 1`，但从 `start == 3` 向右推进时都没有命中任何已有槽位。因此，下列普通切片赋值都会在索引 `3` 前插入一个元素：
+
+    ```python
+    L = [0, 1, 2, 3]
+    L[3:-1000] = {"?"}
+    print(L)  # [0, 1, 2, '?', 3]
+
+    L = [0, 1, 2, 3]
+    L[3:1] = ("?",)
+    print(L)  # [0, 1, 2, '?', 3]
+
+    L = [0, 1, 2, 3]
+    L[3:3] = ["?"]
+    print(L)  # [0, 1, 2, '?', 3]
+    ```
+
+    修正规则：
+
+    ```tex
+    1. Python 会根据序列长度和 step 正负解释并裁剪边界。
+    2. Python 不会交换 start 和 stop，也不会把方向错误的空切片“修复”为非空切片。
+    3. step == 1 的普通空切片可以作为插入点。
+    ```
+
+    #### 10.15.2 `k == -1` 也属于扩展切片赋值
+
+    对：
+
+    ```python
+    L[m:n:k] = iterable
+    ```
+
+    应使用下面的规则：
+
+    ```tex
+    k == 0：
+        切片非法，直接报错。
+
+    k == 1 或省略：
+        普通切片赋值。
+        右侧元素数量可以和目标位置数量不同，列表允许伸缩。
+
+    k != 1：
+        扩展切片赋值。
+        右侧元素数量必须等于目标位置数量。
+    ```
+
+    因此，`k == -1` 也属于扩展切片赋值：
+
+    ```python
+    L = [0, 1, 2, 3]
+    L[3:1:-1] = ["A", "B"]
+
+    print(L)  # [0, 1, 'B', 'A']
+    ```
+
+    目标位置依次是索引 `3` 和索引 `2`，右侧元素依次写入这两个已有槽位。
+
+    如果数量不一致，就会报错：
+
+    ```python
+    L = [0, 1, 2, 3]
+    L[3:1:-1] = ["A"]
+    # ValueError: attempt to assign sequence of size 1 to extended slice of size 2
+    ```
+
+    为什么 `-1` 虽然会命中物理上相邻的槽位，仍然要求等长：
+
+    ```tex
+    普通切片赋值负责“替换一段连续区域，并允许列表伸缩”。
+    扩展切片赋值负责“按给定步长逐一替换预先确定的槽位”。
+    只要 step != 1，Python 就统一要求逐位置等长替换，避免引入新增元素插入方向、删除哪一侧槽位等额外歧义。
+    ```
+
+    再看一个容易误判的例子：
+
+    ```python
+    L = [0, 1, 2, 3]
+
+    print(slice(-100, 1, -1).indices(len(L)))  # (-1, 1, -1)
+    print(L[-100:1:-1])                        # []
+
+    L[-100:1:-1] = ["?"]
+    # ValueError: attempt to assign sequence of size 1 to extended slice of size 0
+    ```
+
+    这里规范化后的 `-1` 是负向切片计算中的边界结果。不要机械套用普通索引访问中 `L[-1]` 表示最后一个元素的直觉。按 `range(-1, 1, -1)` 计算，目标位置数量是 `0`。
+
+    #### 10.15.3 普通列表的 `L * 1` 具有浅拷贝效果
+
+    对普通内置列表：
+
+    ```python
+    inner = []
+    L = [inner, "x"]
+    copied = L * 1
+
+    print(copied is L)       # False
+    print(copied == L)       # True
+    print(copied[0] is L[0]) # True
+    ```
+
+    更精确地说：
+
+    ```tex
+    L * 1 创建新的外层列表对象。
+    新列表保存原列表元素引用的一次重复结果。
+    因此它可以产生浅拷贝效果，但内部可变对象仍然共享。
+    ```
+
+    非空不是必要条件：
+
+    ```python
+    L = []
+    copied = L * 1
+
+    print(copied is L)  # False
+    ```
+
+    但不要混淆：
+
+    ```python
+    L = [1, 2]
+    alias = L
+
+    L *= 1
+
+    print(alias is L)  # True
+    ```
+
+    `L *= 1` 是原地重复操作，不会创建用于隔离外层结构的新列表。
+
+    工程习惯：
+
+    ```tex
+    1. 虽然普通列表的 L * 1 可以产生浅拷贝效果，但不建议把它当作常规复制写法。
+    2. 优先使用 L.copy()、L[:] 或 list(L)，让复制意图更清楚。
+    3. 不要把普通 list 的结论机械推广到所有序列：不可变序列可能复用原对象，自定义类型也可以改写乘法行为。
+    ```
+
 ## 11. 字典和文件：映射、持久化边界与核心类型收束
 
 本小阶段是 Types and Operations 大阶段的收束阶段，不应只理解为“学习字典 API”。它的主线是：
@@ -4662,7 +4828,7 @@ practice/P2_Types_and_Operations/C9_Dictionaries_and_Files/
 当前阶段综合项目：
 
 ```tex
-projects/localization_resource_auditor/
+projects/P2_Types_and_Operations/localization_resource_auditor/
 ```
 
 这个项目定位为“游戏本地化资源审计与核心对象观察工具”。它的价值不在于功能复杂度压过旧项目 `myimporter`，而在于把本大阶段的核心对象类型放进同一个可运行、可观察、可复盘的工程边界里：
@@ -5628,13 +5794,13 @@ csv.writer 只会在字段包含逗号、换行、引号等需要转义的内容
 当前阶段综合项目位于：
 
 ```tex
-projects/localization_resource_auditor/
+projects/P2_Types_and_Operations/localization_resource_auditor/
 ```
 
 主文件：
 
 ```tex
-projects/localization_resource_auditor/localization_auditor.py
+projects/P2_Types_and_Operations/localization_resource_auditor/localization_auditor.py
 ```
 
 项目不是普通“小练习脚本”，而是 Types and Operations 大阶段的收束成果。它把核心对象类型组织成一个工程数据流：
@@ -5904,4 +6070,653 @@ projects/localization_resource_auditor/localization_auditor.py
 14. CSV 是扁平表格文本，不适合直接承载复杂嵌套对象。
 15. 阶段项目的核心价值，是把 dict/list/tuple/set/str/bytes/file/JSON/CSV 放进同一条工程数据流。
 16. Types and Operations 的最终收束，是能在任何代码里分清：源码形式、对象创建、名字绑定、对象修改、显示形式、序列化边界和外部字节。
+```
+
+### 11.20 阶段后专题：创建、复制和修改字典对象的方式大全
+
+字典操作首先要分成两类：
+
+```tex
+创建新字典对象：
+    返回一个新的外层 dict 对象。
+
+修改已有字典对象：
+    原地改变现有 dict 的映射关系。
+```
+
+#### 11.20.1 创建新字典对象
+
+| 方式 | 示例 | 优势和适用场景 | 限制、技巧和禁忌 |
+| --- | --- | --- | --- |
+| 空字典 display | `d = {}` | 最常见、最直观 | `{}` 是空字典，不是空集合；空集合要写 `set()` |
+| `dict()` | `d = dict()` | 强调调用构造器；适合动态构造 | 创建空字典时通常不如 `{}` 简洁 |
+| 字典 display | `d = {"a": 1, "b": 2}` | 静态配置、报告、测试数据 | 重复 key 会被后值覆盖；大型外部数据不要靠肉眼排查重复 key |
+| `dict(mapping)` | `d = dict(source)` | 从类字典对象创建普通字典；创建外层浅拷贝 | 新外层映射独立，但 key/value 引用仍可能共享 |
+| `dict(iterable)` | `d = dict([("a", 1), ("b", 2)])` | 从 pair list、生成器、数据库结果、`zip()` 构造映射 | 每个元素必须恰好可迭代出两个对象；重复 key 的后值覆盖前值 |
+| 命名参数 | `d = dict(a=1, b=2)` | 少量、简单、类似配置的键 | 直接写出的参数名必须是合法 Python 标识符；业务 key 通常更适合普通 display |
+| 组合构造 | `d = dict(source, strict=True)` | 在已有 mapping 或 pair iterable 上追加少量命名参数 | 后面的命名参数覆盖前面的同名键 |
+| 字典推导式 | `d = {k: clean(v) for k, v in pairs}` | 一边遍历，一边过滤或转换 | 复杂副作用不要塞进推导式；逻辑复杂时改用普通循环 |
+| `dict.fromkeys()` | `d = dict.fromkeys(keys, False)` | 所有 key 初始值相同且该值适合共享；保序去重 | 若默认值是可变对象，所有 key 会共享同一个对象 |
+| `copy()` | `d = source.copy()` | 明确表达外层浅拷贝 | 不隔离嵌套可变 value |
+| 字典 display 中的 `**` | `d = {**base, **override}` | 创建新的合并字典；后值覆盖前值；支持非字符串 key | `**` 操作数必须是 mapping |
+| 合并运算符 `\|` | `d = base \| override` | Python 3.9+ 中清楚表达“合并并返回新字典” | 两侧应为 `dict` 或其子类；大量链式合并会创建中间对象 |
+
+`dict(iterable)` 中的元素不要求必须是元组：
+
+```python
+keys = ["menu.start", "menu.quit"]
+values = ["开始", "退出"]
+
+mapping = dict(zip(keys, values))
+```
+
+每个元素只要能产生两个对象即可：
+
+```python
+mapping = dict([["a", 1], ["b", 2]])
+```
+
+但下面会报错：
+
+```python
+mapping = dict([("a", 1, "extra")])
+# ValueError
+```
+
+字典推导式适合为每个 key 创建独立可变对象：
+
+```python
+issues_by_key = {key: [] for key in ["a", "b"]}
+issues_by_key["a"].append("missing")
+
+print(issues_by_key)
+# {'a': ['missing'], 'b': []}
+```
+
+对比 `fromkeys()` 陷阱：
+
+```python
+issues_by_key = dict.fromkeys(["a", "b"], [])
+issues_by_key["a"].append("missing")
+
+print(issues_by_key)
+# {'a': ['missing'], 'b': ['missing']}
+```
+
+#### 11.20.2 两种容易混淆的 `**`
+
+字典 display 中的映射解包：
+
+```python
+base = {1: "one", "strict": False}
+override = {"strict": True}
+
+merged = {**base, **override}
+print(merged)
+# {1: 'one', 'strict': True}
+```
+
+规则：
+
+```tex
+1. ** 的操作数必须是 mapping。
+2. key 可以不是字符串。
+3. 后面的同名 key 覆盖前面的值。
+```
+
+函数调用边界中的关键字参数解包：
+
+```python
+mapping = dict(**{"menu.start": "开始"})
+print(mapping)
+# {'menu.start': '开始'}
+```
+
+规则不同：
+
+```tex
+1. **mapping 中的 key 必须是 str。
+2. 通过 ** 解包提供的字符串 key 不必是合法 Python 标识符。
+3. 同一次函数调用中，多个来源提供重复关键字会报 TypeError，不是静默覆盖。
+```
+
+例如：
+
+```python
+dict(**{"a": 1}, **{"a": 2})
+# TypeError: dict() got multiple values for keyword argument 'a'
+```
+
+因此：
+
+```tex
+需要一般映射合并并让后值覆盖前值：
+    优先使用 {**a, **b} 或 a | b。
+
+需要调用函数并把 mapping 转成关键字参数：
+    使用 func(**mapping)。
+```
+
+#### 11.20.3 原地修改已有字典
+
+| 操作 | 是否原地修改 | 返回值 | 适用场景 |
+| --- | --- | --- | --- |
+| `d[key] = value` | 是 | 赋值语句没有表达式返回值 | 新增或覆盖单个映射 |
+| `del d[key]` | 是 | `del` 语句没有表达式返回值 | 明确删除指定 key |
+| `d.update(other)` | 是 | `None` | 批量合并 mapping、pair iterable 或命名参数 |
+| `d \|= other` | 是 | 增强赋值语句没有表达式返回值 | Python 3.9+；批量合并 mapping 或 pair iterable |
+| `d.setdefault(key, default)` | 缺 key 时是 | 已有值或新插入的默认值 | 缺失时创建并存回默认对象 |
+| `d.pop(key)` | 是 | 被删除的旧 value | 删除并取得 value |
+| `d.popitem()` | 是 | 最后插入的 `(key, value)` | 按 LIFO 顺序弹出条目 |
+| `d.clear()` | 是 | `None` | 清空字典 |
+
+`update()` 不应链式赋值：
+
+```python
+d = {"a": 1}
+result = d.update({"b": 2})
+
+print(d)       # {'a': 1, 'b': 2}
+print(result)  # None
+```
+
+禁忌：
+
+```python
+d = d.update({"b": 2})
+# d 会绑定 None
+```
+
+Python 3.9+ 中：
+
+```python
+d = {"a": 1}
+d |= [("a", 2), ("b", 3)]
+
+print(d)
+# {'a': 2, 'b': 3}
+```
+
+工程选择：
+
+```tex
+1. 小型静态映射：使用字典 display。
+2. 逐条建立索引：使用 d[key] = value。
+3. 从 pair list 生成最终映射：使用 dict(pairs)。
+4. 同时过滤和转换：使用字典推导式。
+5. 合并并返回新对象：使用 a | b 或 {**a, **b}。
+6. 原地批量更新：使用 update()；若代码已经采用合并运算符风格，也可以使用 |=。
+7. 分组累计：优先 defaultdict(list)；少量场景可使用 setdefault。
+8. 保序去重：使用 list(dict.fromkeys(items))。
+```
+
+#### 11.20.4 保留插入顺序不等于按 key 或 hash 排序
+
+Python 3.7+ 的字典保留插入顺序。这是语言层可依赖的行为，不只是 `print()` 时的显示效果：
+
+```python
+d = {}
+d["b"] = 2
+d["a"] = 1
+d["b"] = 20
+
+print(list(d))         # ['b', 'a']
+print(list(d.keys()))  # ['b', 'a']
+print(list(d.items())) # [('b', 20), ('a', 1)]
+```
+
+更新已有 key 不改变其顺序：
+
+```python
+d["b"] = 200
+print(list(d))  # ['b', 'a']
+```
+
+删除后重新插入，会进入末尾：
+
+```python
+del d["b"]
+d["b"] = 300
+
+print(list(d))  # ['a', 'b']
+```
+
+但这不代表字典支持按位置索引：
+
+```python
+d[0]
+```
+
+它表示查找 key `0`，不是读取第一个条目。
+
+从 CPython 实现层理解，现代紧凑字典可以粗略拆成两个职责区域：
+
+```tex
+哈希索引区：
+    服务于快速按 key 查找。
+
+紧凑条目区：
+    基本按插入顺序维护条目，服务于稳定迭代。
+```
+
+扩容时，内部哈希索引结构可能重建，但外部可观察的插入顺序必须保持不变。
+
+注意：
+
+```tex
+“字典保留插入顺序”是 Python 语言保证。
+“CPython 使用何种内部数组、如何压缩条目”属于实现层解释。
+其它 Python 实现必须满足语言行为，但不要求照搬 CPython 内部布局。
+```
+
+### 11.21 阶段后专题：Path 便捷读写与持久化模块扩展
+
+#### 11.21.1 `Path` 不是文件对象
+
+`Path` 对象表示文件系统路径。它不是文件对象，也不是文件内容：
+
+```python
+from pathlib import Path
+
+path = Path("report.json")
+```
+
+`path` 只是描述文件在哪里。下列三种读取形式的边界不同：
+
+```python
+# open() 接受路径字符串，也接受 Path 对象
+with open(path, "r", encoding="utf-8") as file:
+    text = file.read()
+
+# Path.open() 返回文件对象
+with path.open("r", encoding="utf-8") as file:
+    text = file.read()
+
+# Path.read_text() 内部完成打开、完整读取和关闭
+text = path.read_text(encoding="utf-8")
+```
+
+`Path` 的常见便捷方法：
+
+| 方法 | 返回值 | 本质 |
+| --- | --- | --- |
+| `path.open(...)` | 文件对象 | 打开文件，文件对象生命周期由调用者管理 |
+| `path.read_text(...)` | `str` | 打开文本文件、完整读取、关闭 |
+| `path.write_text(text, ...)` | 写入字符数 `int` | 打开文本文件、完整写入、关闭 |
+| `path.read_bytes()` | `bytes` | 打开二进制文件、完整读取、关闭 |
+| `path.write_bytes(data)` | 写入字节数 `int` | 打开二进制文件、完整写入、关闭 |
+
+工程选择：
+
+```tex
+完整读取小型配置、JSON、短报告：
+    read_text() / write_text()
+
+完整读取小型二进制资源：
+    read_bytes() / write_bytes()
+
+大型文件逐行处理、多次 write、追加写、seek/tell、缓冲和游标控制：
+    with path.open(...) as file
+
+需要传入 json.dump()、csv.writer()、csv.DictReader() 等接收文件对象的 API：
+    with path.open(...) as file
+```
+
+当前环境使用 Python `3.9.13`。这一版本中，`Path.read_text()` / `Path.write_text()` 没有 `newline` 参数。因此 CSV 文件常见写法仍是：
+
+```python
+import csv
+from pathlib import Path
+
+with Path("translations.csv").open("r", encoding="utf-8-sig", newline="") as file:
+    rows = list(csv.DictReader(file))
+```
+
+阶段项目没有强行统一成一种写法，是因为操作需求不同：
+
+```tex
+简单完整写入最终报告：
+    output_path.write_text(rendered, encoding="utf-8")
+
+CSV 输入需要 newline="" 并交给 csv.DictReader：
+    with open(path, "r", encoding="utf-8-sig", newline="") as file
+
+强调路径对象到文件对象的边界：
+    with open(path, ...) 或 with path.open(...) as file
+```
+
+还要避免这种写法：
+
+```python
+Path("report.txt").open("w", encoding="utf-8").write("done")
+```
+
+它虽然可能工作，但没有清楚表达关闭文件的边界。应改用：
+
+```python
+Path("report.txt").write_text("done", encoding="utf-8")
+```
+
+或：
+
+```python
+with Path("report.txt").open("w", encoding="utf-8") as file:
+    file.write("done")
+```
+
+#### 11.21.2 JSON、CSV、pickle、shelve、struct 的定位
+
+先看最简模型：
+
+```tex
+JSON：
+    Python 基础对象树 <-> JSON 文本 str
+
+CSV：
+    扁平表格记录 <-> CSV 文本 str
+
+pickle：
+    Python 对象图 <-> bytes
+
+shelve：
+    str key -> Python 对象的本地持久化映射
+
+struct：
+    按格式字符串指定的字段值 <-> 固定布局 bytes
+```
+
+横向比较：
+
+| 工具 | 主要输出形态 | 人类可读 | 跨语言 | Python 类型保真 | 安全边界 | 典型用途 |
+| --- | --- | --- | --- | --- | --- | --- |
+| JSON | 文本 `str` | 高 | 高 | 有限 | 可解析外部数据，但仍要校验结构和大小 | API、配置、结构化报告 |
+| CSV | 文本 `str` | 高 | 高 | 很低 | 校验字段、行数和业务类型 | 扁平翻译表、导入导出 |
+| `pickle` | `bytes` | 低 | 低 | 较高 | 只能加载可信数据 | Python 本地缓存、可信快照 |
+| `shelve` | 持久化类字典 | 低 | 低 | 较高 | 只能打开可信 shelf；不适合并发写 | 小型本地状态存储 |
+| `struct` | 固定布局 `bytes` | 低 | 高，但协议必须一致 | 不是目标 | 校验长度、格式和字节序 | 网络包、二进制文件头、资源索引 |
+
+#### 11.21.3 `pickle`：Python 对象图到字节流
+
+`pickle` 适合保存可信环境中的 Python 对象图：
+
+```python
+import pickle
+from pathlib import Path
+
+data = {
+    "tags": {"ui", "menu"},
+    "record": ("menu.start", "开始"),
+}
+
+path = Path("cache.pickle")
+
+with path.open("wb") as file:
+    pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+with path.open("rb") as file:
+    loaded = pickle.load(file)
+```
+
+边界：
+
+```tex
+pickle.dumps(obj) -> bytes
+pickle.loads(data) -> Python 对象
+pickle.dump(obj, binary_file) -> 写入二进制流
+pickle.load(binary_file) -> 从二进制流恢复对象
+```
+
+相较于 JSON，`pickle` 可以处理更多 Python 类型，并能表达共享引用或递归结构。但它不是跨语言交换格式。
+
+安全禁忌：
+
+```tex
+绝对不要反序列化不可信来源的 pickle 数据。
+恶意 pickle 在加载时可能执行任意代码。
+不要把用户上传文件、网络输入或第三方下载缓存直接交给 pickle.load()。
+```
+
+#### 11.21.4 `shelve`：类字典式本地持久化
+
+`shelve` 基于 `dbm` 和 `pickle`，提供持久化的类字典接口：
+
+```python
+import shelve
+
+with shelve.open("audit_cache") as db:
+    db["menu.start"] = {"text": "开始", "tags": ["ui"]}
+```
+
+键必须是普通字符串；值可以是 `pickle` 能处理的对象。
+
+最重要的陷阱：
+
+```python
+with shelve.open("audit_cache") as db:
+    db["tags"] = ["ui"]
+    db["tags"].append("menu")  # 默认不保证持久化这次原地修改
+```
+
+可靠写法：
+
+```python
+with shelve.open("audit_cache") as db:
+    tags = db["tags"]
+    tags.append("menu")
+    db["tags"] = tags
+```
+
+或者使用 `writeback=True`，但要理解代价：
+
+```tex
+writeback=True 会缓存访问过的条目。
+它可能增加内存占用，并让关闭过程更慢。
+```
+
+工程禁忌：
+
+```tex
+1. shelve 继承 pickle 的安全风险，不要打开不可信 shelf。
+2. shelve 不适合并发读写。
+3. shelve 可能生成多个底层文件，不要把它想象成一定只有一个文件。
+4. 需要事务、并发、查询或长期演进时，优先考虑 sqlite3 等数据库。
+```
+
+#### 11.21.5 `struct`：固定布局二进制协议
+
+`struct` 不是通用对象序列化器。它使用格式字符串，把指定字段转换为固定布局字节：
+
+```python
+import struct
+
+payload = struct.pack(">IH", 1001, 250)
+message_id, hp = struct.unpack(">IH", payload)
+
+print(type(payload).__name__)  # bytes
+print(message_id, hp)          # 1001 250
+```
+
+格式含义：
+
+```tex
+>：
+    大端序，使用标准尺寸，不使用隐式对齐填充。
+
+I：
+    无符号 4 字节整数。
+
+H：
+    无符号 2 字节整数。
+```
+
+常见前缀：
+
+| 前缀 | 字节序 | 尺寸 | 对齐 |
+| --- | --- | --- | --- |
+| `@` | 本机 | 本机 | 本机 |
+| `=` | 本机 | 标准 | 无 |
+| `<` | 小端 | 标准 | 无 |
+| `>` | 大端 | 标准 | 无 |
+| `!` | 网络字节序，即大端 | 标准 | 无 |
+
+工程规则：
+
+```tex
+1. 网络协议和跨平台文件格式应显式使用 <、> 或 !。
+2. 不要默认依赖 @，除非确实要匹配本机 C 结构体布局。
+3. 使用 struct.calcsize(format) 检查预期字节长度。
+4. struct 不会保存字段名和格式说明；读写双方必须事先约定协议。
+```
+
+本地化审计项目中的选择建议：
+
+```tex
+资源文件、配置、结构化报告：
+    JSON。
+
+翻译表导入导出：
+    CSV。
+
+可信的本地扫描缓存：
+    可以考虑 pickle 或 shelve。
+
+游戏二进制资源、协议字段、存档头：
+    struct。
+```
+
+### 11.22 阶段后专题：`dir()`、`__dict__` 与对象命名空间
+
+#### 11.22.1 模块对象中的默认情况
+
+假设名字 `m` 绑定模块对象：
+
+```python
+import types
+
+m = types.ModuleType("demo")
+m.x = 1
+```
+
+对普通、未经定制的模块对象，下面的集合通常相等：
+
+```python
+print(set(dir(m)) == set(m.__dict__.keys()))  # 通常是 True
+```
+
+原因：
+
+```tex
+m.__dict__：
+    模块命名空间字典。
+
+dir(m)：
+    默认情况下列出模块属性名称并排序。
+```
+
+名字 `m` 位于哪个外部命名空间并不重要。关键是它绑定的模块对象本身如何提供属性。
+
+#### 11.22.2 不能把“通常相等”误说成“恒等”
+
+模块可以定制 `__dir__`：
+
+```python
+import types
+
+m = types.ModuleType("demo")
+m.x = 1
+m.__dir__ = lambda: ["virtual_name"]
+
+print(dir(m))
+# ['virtual_name']
+
+print(m.__dict__.keys())
+# 仍然包含 __name__、x、__dir__ 等真实命名空间键
+```
+
+因此：
+
+```tex
+set(dir(m)) == set(m.__dict__.keys())
+不是对所有模块对象恒成立的语言保证。
+```
+
+模块还可以定义 `__getattr__` 动态提供未存入 `__dict__` 的属性。如果没有同步定制 `__dir__`，甚至可能出现：
+
+```tex
+属性可以 getattr() 成功，
+但 dir() 中没有列出这个名称。
+```
+
+#### 11.22.3 对任意对象更不成立
+
+普通实例：
+
+```python
+class Player:
+    category = "hero"
+
+    def attack(self):
+        pass
+
+
+player = Player()
+player.name = "Alice"
+
+print(player.__dict__)
+# {'name': 'Alice'}
+
+print("attack" in dir(player))
+# True
+```
+
+原因：
+
+```tex
+player.__dict__：
+    主要保存实例自身命名空间中的属性。
+
+dir(player)：
+    通常还会纳入类属性、方法和基类提供的名称。
+```
+
+有些对象甚至没有 `__dict__`：
+
+```python
+class SlotOnly:
+    __slots__ = ("name",)
+
+
+player = SlotOnly()
+player.name = "Alice"
+
+print("name" in dir(player))        # True
+print(hasattr(player, "__dict__"))  # False
+```
+
+#### 11.22.4 区分存储层、探索层和读取行为
+
+| 表达式 | 定位 |
+| --- | --- |
+| `obj.__dict__` | 若对象支持，查看对象自身实际拥有的命名空间映射 |
+| `vars(obj)` | 通常返回 `obj.__dict__`；对象没有 `__dict__` 时会报 `TypeError` |
+| `dir(obj)` | 交互探索工具，返回值得关注的属性名称列表；可被 `__dir__` 定制 |
+| `getattr(obj, name)` | 真正尝试读取属性，可能触发动态属性逻辑 |
+
+本质总结：
+
+```tex
+__dict__ 是存储层视角。
+dir() 是探索和提示层视角。
+getattr() 才是真正尝试执行属性读取。
+
+dir() 不是 obj.__dict__.keys() 的通用别名，
+也不是对象全部可访问属性的绝对权威清单。
+```
+
+这个专题会在后续学习模块、类、属性访问和数据模型时继续展开。目前应先稳定保留三层边界：
+
+```tex
+对象实际保存了什么；
+探索工具展示了什么；
+属性读取协议最终能取得什么。
 ```

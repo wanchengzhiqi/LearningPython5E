@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plugin Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #17191d;
+            color: #e7e9ec;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        h1, h3 {
+            margin: 0;
+            color: #f5f7fa;
+        }
+
+        button {
+            margin-right: 6px;
+            padding: 6px 10px;
+            border: 1px solid #59616e;
+            border-radius: 4px;
+            background: #262b33;
+            color: #f5f7fa;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+        }
+
+        .plugin {
+            margin-bottom: 10px;
+            padding: 14px;
+            border: 1px solid #444b56;
+            border-left-width: 5px;
+            border-radius: 6px;
+            background: #20242b;
+        }
+
+        .active { border-left-color: #4caf50; }
+        .failed { border-left-color: #f44336; }
+        .loaded { border-left-color: #2196f3; }
+        .discovered { border-left-color: #ffdd00; }
+
+        .fields {
+            display: grid;
+            grid-template-columns: minmax(120px, 180px) 1fr;
+            gap: 6px 14px;
+            margin: 12px 0;
+        }
+
+        .label {
+            color: #aeb7c4;
+            font-weight: bold;
+        }
+
+        .value {
+            overflow-wrap: anywhere;
+        }
+
+        .errors, #status {
+            color: #ff8a80;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Plugin Dashboard</h1>
+    <button id="refresh" type="button">Refresh</button>
+</header>
+
+<p id="status" role="status"></p>
+<main id="plugins"></main>
+
+<script>
+const container = document.getElementById('plugins');
+const statusText = document.getElementById('status');
+
+function makeElement(tag, text, className) {
+    const node = document.createElement(tag);
+    if (text !== undefined) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+}
+
+function addField(fields, label, value) {
+    fields.appendChild(makeElement('div', label, 'label'));
+    fields.appendChild(makeElement('div', String(value), 'value'));
+}
+
+function makeAction(label, action, name, disabled) {
+    const button = makeElement('button', label);
+    button.type = 'button';
+    button.disabled = disabled;
+    button.addEventListener('click', () => runAction(action, name));
+    return button;
+}
+
+function renderPlugin(name, info) {
+    const card = makeElement('section', undefined, `plugin ${info.state}`);
+    card.appendChild(makeElement('h3', name));
+
+    const fields = makeElement('div', undefined, 'fields');
+    addField(fields, 'State', info.state);
+    addField(fields, 'Path', info.path);
+    addField(fields, 'Entry', info.meta.entry);
+    addField(fields, 'Depends', JSON.stringify(info.meta.depends || []));
+    addField(fields, 'Provides', JSON.stringify(info.provides || []));
+    addField(fields, 'Instance', JSON.stringify(info.instance));
+    addField(fields, 'Permissions', JSON.stringify(info.permissions));
+    addField(fields, 'Load Time', info.metrics?.load_time ?? 'N/A');
+    addField(fields, 'Activate Time', info.metrics?.activate_time ?? 'N/A');
+    card.appendChild(fields);
+
+    const actions = makeElement('div');
+    actions.appendChild(makeAction('Reload', 'reload', name, false));
+    actions.appendChild(makeAction('Activate', 'activate', name, info.state !== 'loaded'));
+    actions.appendChild(makeAction('Deactivate', 'deactivate', name, info.state !== 'active'));
+    card.appendChild(actions);
+
+    const errorGroups = info.metrics?.error || {};
+    const errors = Object.entries(errorGroups).flatMap(([kind, messages]) =>
+        messages.map(message => `${kind}: ${message}`)
+    );
+    if (errors.length) {
+        const list = makeElement('ul', undefined, 'errors');
+        errors.forEach(error => list.appendChild(makeElement('li', error)));
+        card.appendChild(list);
+    }
+
+    return card;
+}
+
+async function refresh(clearStatus = true) {
+    if (clearStatus) statusText.textContent = '';
+    try {
+        const response = await fetch('/api/plugins');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Unable to load plugins.');
+
+        container.replaceChildren();
+        Object.entries(data).forEach(([name, info]) => {
+            container.appendChild(renderPlugin(name, info));
+        });
+    } catch (error) {
+        statusText.textContent = error.message;
+    }
+}
+
+async function runAction(action, name) {
+    statusText.textContent = '';
+    try {
+        const safeName = encodeURIComponent(name);
+        const response = await fetch(`/api/plugins/${action}/${safeName}`, {method: 'POST'});
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `${action} failed.`);
+        statusText.textContent = data.message;
+    } catch (error) {
+        statusText.textContent = error.message;
+    }
+    await refresh(false);
+}
+
+document.getElementById('refresh').addEventListener('click', refresh);
+refresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "plugin_a",
+  "entry": "plugin",
+  "version": "1.2",
+  "description": "In-process example plugin with observable activation state.",
+  "execution_mode": "inprocess",
+  "provides": ["deep", "dark", "fantasy"],
+  "permissions": {
+    "filesystem": "read",
+    "network": false,
+    "subprocess": false
+  }
+}
