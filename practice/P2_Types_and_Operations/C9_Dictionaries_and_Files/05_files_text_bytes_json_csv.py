@@ -1,4 +1,4 @@
-"""
+r"""
 Paths, file objects, text, bytes, JSON, and CSV boundaries.
 
 Run:

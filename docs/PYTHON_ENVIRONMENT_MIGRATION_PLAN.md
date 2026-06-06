@@ -1,6 +1,6 @@
 # Python Environment Migration Plan
 
-更新时间：2026-06-02
+更新时间：2026-06-03
 
 ## 1. 目的
 
@@ -12,7 +12,7 @@
 
 ## 2. 官方版本状态
 
-截至 2026-06-02：
+截至 2026-06-03：
 
 - Python `3.9` 已于 2025-10-31 结束官方支持；
 - Python `3.14` 处于 bugfix 维护阶段；
@@ -40,8 +40,21 @@ D:\MySoftwareDownload\Python\Python39\python.exe
 
 当前为 64 位 Windows 与 64 位 Python 进程。
 
-`py -0p` 当前没有发现已注册解释器。现有 Python `3.9.13` 可以正常通过
-`python` 命令使用，但它不在 Windows Python Launcher 的可发现列表中。
+现有 Python `3.9.13` 仍可以正常通过 `python` 命令使用，但它不在 Windows
+Python Launcher 的可发现列表中。
+
+2026-06-03 已并行安装：
+
+```text
+Python 3.14.5
+D:\MySoftwareDownload\Python\Python314\python.exe
+```
+
+新安装器同时更新了全局 `py launcher`。当前：
+
+- `py -0p` 可以发现 Python `3.14`；
+- `py` 与 `py -3.14` 指向 Python `3.14.5`；
+- `python` 仍指向旧 Python `3.9.13`，因为没有修改持久化 `PATH`。
 
 ### 3.2 项目虚拟环境
 
@@ -60,12 +73,21 @@ D:\MySoftwareDownload\Python\Python39\python.exe
 现有 `.venv` 应暂时保留，作为 Python `3.9.13` 历史回归环境。不要覆盖、原地
 升级或批量删除它。
 
+2026-06-03 已新建并行虚拟环境：
+
+```text
+D:\MySoftwareDownload\PythonPractice\LearningPython5E\.venv-py314
+```
+
+它基于 Python `3.14.5`，只安装项目声明依赖及其传递依赖，没有无差别复制旧
+`.venv`。新环境确认不包含历史残留 `requests`。
+
 ### 3.3 PyCharm
 
 当前项目 `.idea/misc.xml` 指向：
 
 ```text
-Python 3.9 (LearningPython5E)
+Python 3.10 (LearningPython5E)
 ```
 
 当前机器 PATH 中可见的 IDE 路径是：
@@ -77,12 +99,30 @@ D:\MySoftwareDownload\PyCharm 2023.3.5\bin
 PyCharm `2023.3` 的官方说明重点支持 Python `3.12` 特性。不要未经验证就假设
 它能完整理解 Python `3.14` 的新语法、调试协议和代码分析能力。
 
+截至 2026-06-03，JetBrains 官方页面列出的当前版本为 PyCharm `2026.1`。
+迁移时应升级现有 PyCharm `2023.3.5`，而不是继续把旧 IDE 作为 Python
+`3.14.5` 的默认开发环境。
+
 如果采用 Python `3.14.5`，建议先把 PyCharm 升级到支持现代 Python 版本的
 新版本，再在 IDE 中手工切换项目解释器。
+
+用户已于 2026-06-03 明确决定暂不升级 PyCharm。2026-06-04 已在 PyCharm 中
+把项目 SDK 切换到现有虚拟环境：
+
+```text
+D:\MySoftwareDownload\PythonPractice\LearningPython5E\.venv-py314\Scripts\python.exe
+```
+
+需要注意：PyCharm `2023.3.5` 会把该 SDK 显示为
+`Python 3.10 (LearningPython5E)`，这与命令行验证出的实际解释器版本
+Python `3.14.5` 不一致。判断真实解释器时，应以 `sys.version`、
+`sys.executable` 和实际运行结果为准；仍不把该旧 IDE 对 Python `3.14` 的
+代码分析、调试协议和新语法支持视为完整验证。
 
 官方来源：
 
 - [What's New in PyCharm 2023.3](https://www.jetbrains.com/pycharm/whatsnew/2023-3/)
+- [What's New in PyCharm 2026.1](https://www.jetbrains.com/pycharm/whatsnew/)
 - [PyCharm installation guide](https://www.jetbrains.com/help/pycharm/installation-guide.html)
 - [Configure a Python interpreter](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html)
 
@@ -245,26 +285,102 @@ projects\P1_Getting_Started\myimporter_system\src\myimporter\sitecustomize_templ
 11. 在 PyCharm 中切换 SDK，并运行一条章节脚本与两个阶段项目；
 12. 记录 Python `3.9.13` 与 `3.14.5` 的差异。
 
+### 8.1 2026-06-03 命令行回归结果
+
+已通过：
+
+1. 新解释器版本、路径、`sys.executable`、`sys.prefix` 与 `sys.base_prefix`；
+2. `.venv-py314` 已由 `.gitignore` 的 `.venv-py*/` 规则忽略；
+3. `pip check`；
+4. `localization_resource_auditor --format json | python -m json.tool`；
+5. `myimporter` 的 `safe_mod -> runtime_mod -> safe_mod` 切换、finder 插入与清理；
+6. RuntimeService、CLI、worker 临时端口生命周期；
+7. CLI 的 `list`、`status plugin_b` 与 `shutdown`；
+8. `plugin_a` 以 `inprocess` 模式激活；
+9. `plugin_b` 以 `subprocess` 模式激活；
+10. `plugin_b` worker 明确由 `.venv-py314\Scripts\python.exe` 启动；
+11. Web UI 的 `/`、`/api/plugins` 与 `/api/plugins/reload/plugin_a` 返回 `200`；
+12. Web UI 的 `/api/plugins/install` 返回预期中的 `501`；
+13. 服务关闭后无残留 Python 进程；
+14. 新解释器与新虚拟环境默认都没有加载 `sitecustomize` 或 `myimporter`；
+15. 一条 C9 章节脚本可正常运行。
+
+Python `3.14` 同时暴露出 Windows 路径示例中的无效转义序列警告。已把
+`localization_auditor.py` 和六个 C9 教学脚本的模块文档字符串改为原始字符串，
+随后重新通过定向 `py_compile`。
+
+尚未执行：
+
+1. PyCharm IDE 内代表性脚本回归；
+2. 为新解释器复制全局 `sitecustomize.py`，因为当前没有必要；
+3. 修改持久化 `PATH`，因为当前并行状态已经满足验证需求。
+
 ## 9. 需要人工确认后再执行的事项
 
 以下操作会改变机器级开发环境，不应静默执行：
 
-1. 是否升级 PyCharm；
-2. 使用 Python install manager 还是官方 64 位 installer；
-3. Python `3.14.5` 的安装目录；
-4. 新虚拟环境名称；
-5. 是否在回归完成后为新解释器安装全局 `sitecustomize.py`；
-6. 是否调整持久化 PATH。
+1. 是否升级 PyCharm：用户已决定暂缓；
+2. 安装方式：已使用官方 64 位 installer；
+3. Python `3.14.5` 的安装目录：已采用 `D:\MySoftwareDownload\Python\Python314`；
+4. 新虚拟环境名称：已采用 `.venv-py314`；
+5. PyCharm 项目 SDK：已指向 `.venv-py314\Scripts\python.exe`，但 PyCharm
+   `2023.3.5` 显示标签不准确；
+6. 是否在回归完成后为新解释器安装全局 `sitecustomize.py`；
+7. 是否调整持久化 PATH。
 
 ## 10. 当前结论
 
-环境迁移具备清晰的旧环境基线，可以进入“人工确认 -> 并行安装 -> 新环境
-回归 -> PyCharm 切换”阶段。
+Python `3.14.5` 并行安装、新虚拟环境创建和命令行回归已经完成。
 
-在新环境验证完成前：
+当前保留一个有意为之的过渡状态：
 
-- 不删除旧 Python；
-- 不删除旧 `.venv`；
-- 不覆盖旧解释器目录；
-- 不复制全局 `sitecustomize.py`；
-- 不批量重写 `.idea/`。
+- `python` 命令仍指向旧 Python `3.9.13`；
+- `py` 与 `py -3.14` 指向新 Python `3.14.5`；
+- `.venv` 保留为历史回归环境；
+- `.venv-py314` 是已经通过命令行回归的新环境；
+- 新解释器没有复制全局 `sitecustomize.py`；
+- PyCharm `2023.3.5` 暂不升级；项目 SDK 已指向 `.venv-py314`，但 UI 标签
+  显示为 `Python 3.10 (LearningPython5E)`，不应把该标签当作真实解释器版本；
+- 持久化 `PATH` 暂不修改。
+
+后续只需要单独决定：
+
+1. 何时升级 PyCharm，并重新验证 Python `3.14` IDE 支持；
+2. 是否在 PyCharm 内跑一组代表性脚本回归；
+3. 是否确实需要为新解释器安装 opt-in `sitecustomize.py`；
+4. 是否要让持久化 `PATH` 中的 `python` 命令转向新解释器。
+
+## 11. 日常使用约定
+
+后续仓库学习默认使用 `.venv-py314`。进入新的 PowerShell 会话后，在仓库根
+目录运行：
+
+```powershell
+.\.venv-py314\Scripts\Activate.ps1
+python --version
+```
+
+预期输出版本为 Python `3.14.5`。激活后，普通 `python` 与 `python -m pip`
+都会落入 `.venv-py314`。离开时运行：
+
+```powershell
+deactivate
+```
+
+如果不希望激活环境，也可以显式调用：
+
+```powershell
+.\.venv-py314\Scripts\python.exe <script>
+```
+
+注意：
+
+- 未激活虚拟环境时，裸 `python` 仍指向旧 Python `3.9.13`；
+- `py -3.14` 启动的是 Python `3.14.5` 基础解释器，不会自动进入
+  `.venv-py314`；
+- PyCharm 项目 SDK 已指向 `.venv-py314\Scripts\python.exe`，但旧 IDE 可能
+  显示为 `Python 3.10`；如需确认，运行 `import sys` 后查看 `sys.version`
+  和 `sys.executable`；
+- 旧 Python `3.9.13` 与旧 `.venv` 只作为历史回归基线；
+- 新 Python `3.14.5` 和 `.venv-py314` 不需要全局 `sitecustomize.py`；
+- 只有未来明确需要全局 opt-in bootstrap 时，才单独评估复制模板。

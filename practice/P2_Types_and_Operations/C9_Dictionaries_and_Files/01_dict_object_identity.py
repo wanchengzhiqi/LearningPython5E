@@ -1,4 +1,4 @@
-"""
+r"""
 Dict object identity: literals, binding, key overwrite, and value mutation.
 
 Run:

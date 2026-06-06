@@ -29,12 +29,22 @@
 - 后续学习路线以 `docs/PYTHON_LEARNING_ROADMAP.md` 为当前仓库级参考。
 - 参考书章节是语言主线和来源索引，不是不可调整的课表。允许根据最新学习
   画像、项目需求和现代 Python 工程实践合并、拆分、前置或补充主题。
+- 学习会话默认以 `CHAPTER` 为粒度：一个新会话只正式推进一个 `PART` 下的
+  一个章节。`PART` 和相邻章节用于提供路线背景；当前章节收束后，为下一个
+  章节生成新的启动模板并另开会话。
 - 每次跨越大阶段边界，或阶段测验暴露出反复薄弱点时，复核路线图并按需更新。
+- 小阶段收束、大阶段收束、路线调整、环境迁移、仓库重构或长期流程规则改变
+  后，按职责复核 `README.md`、`AGENTS.md`、`docs/` 索引、路线图、学习画像
+  和相关项目文档，避免长期记录漂移。用户级 Codex 记忆只在用户明确要求时
+  同步。
 - 当前已完成 `P2_Types_and_Operations` 收束验收，下一大阶段计划为
   `P3_Statements_and_Syntax`。
-- 在正式开始 P3 前，单独规划从 Python `3.9.13` 迁移到受支持版本的环境
-  现代化任务，并保留旧环境用于历史实验回归。当前迁移盘点、决策点和回归
-  清单见 `docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md`。
+- Python `3.14.5` 并行安装、`.venv-py314` 创建和命令行回归已经完成。
+  旧 Python `3.9.13` 与旧 `.venv` 保留用于历史实验回归。PyCharm 升级暂缓；
+  项目 SDK 已指向 `.venv-py314\Scripts\python.exe`，但 PyCharm `2023.3.5`
+  会把该 SDK 显示为 `Python 3.10 (LearningPython5E)`。判断实际解释器时以
+  `sys.version` 和 `sys.executable` 为准。当前迁移记录和使用边界见
+  `docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md`。
 
 ## Current Capstones
 
@@ -97,8 +107,12 @@ python projects\P1_Getting_Started\myimporter_system\web_ui\web_ui.py
 - 不要擅自修改带有全局配置、路径、环境变量、模式语义或系统行为含义的文件。
   如确有必要，应先说明原因、影响范围和建议方案，并等待用户授权。
 - 当前环境未必安装 `pytest`，不要默认执行 `python -m pytest`。
+- 后续日常学习默认先激活仓库根目录下的 `.venv-py314`。未激活虚拟环境时，
+  裸 `python` 仍指向旧 Python `3.9.13`，不要误把它当成当前学习环境。
 - 编辑中文内容时保持 UTF-8。终端乱码通常是显示问题，不要据此批量重写文件。
-- 当前环境有全局 `sitecustomize.py` 参与启动过程，不要误判相关日志来源。
+- 旧 Python `3.9.13` 有全局 `sitecustomize.py` 参与启动过程，不要误判相关
+  日志来源。新 Python `3.14.5` 与 `.venv-py314` 当前保持干净，不要未经授权
+  复制全局启动钩子。
 
 ## Git Automation Boundary
 
@@ -126,7 +140,8 @@ worker 解释器和 RPC 参数支持通过对应的 `MYIMPORTER_*` 环境变量�
 
 `projects/P1_Getting_Started/myimporter_system/src/myimporter/sitecustomize_template.py`
 是全局启动钩子的可追溯模板。全局副本默认静默；显式启用时需要通过
-`MYIMPORTER_SOURCE_ROOT` 指向该项目的 `src/` 目录。
+`MYIMPORTER_SOURCE_ROOT` 指向该项目的 `src/` 目录。当前只在旧 Python
+`3.9.13` 中保留全局副本；新 Python `3.14.5` 默认不安装该钩子。
 
 ## Known Cautions
 

@@ -36,8 +36,12 @@ myimporter_system/
 在仓库根目录运行：
 
 ```powershell
+.\.venv-py314\Scripts\Activate.ps1
 python -m pip install -r projects\P1_Getting_Started\myimporter_system\requirements.txt
 ```
+
+后续示例默认已经激活 `.venv-py314`。不要把依赖误装入保留作历史回归的旧
+Python `3.9.13` 或旧 `.venv`。
 
 ## 推荐用法
 
@@ -105,6 +109,9 @@ $env:MYIMPORTER_SOURCE_ROOT="D:\path\to\LearningPython5E\projects\P1_Getting_Sta
 $env:MY_MODULE_PATHS="D:\path\to\extra\modules"
 python
 ```
+
+当前 Python `3.14.5` 与 `.venv-py314` 不需要安装该全局钩子。项目入口已经
+能够显式运行系统；只有未来确实需要全局 opt-in bootstrap 时才单独评估复制。
 
 ## 当前限制
 

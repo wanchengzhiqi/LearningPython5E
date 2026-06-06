@@ -13,14 +13,15 @@
 
 ## 1. 当前能力快照
 
-更新时间：2026-06-02
+更新时间：2026-06-03
 
 当前阶段位置：
 
-- 当前大阶段：学习 Python 的类型和运算（Types and Operations）。
-- 已完成小阶段：核心对象类型初步认识、动态类型模型、数值对象类型、字符串基础、列表和元组、字典和文件。
-- 当前状态：字典和文件小阶段已通过阶段末测验，建议得分 `96 / 100`；Types and Operations 大阶段已通过收束验收。当前处于跨阶段治理期，正在处理历史项目、仓库结构、后续路线和环境现代化准备。
-- 下一阶段：进入 `P3_Statements_and_Syntax`。后续应重点观察控制流、迭代和语句执行如何与当前已经掌握的对象模型结合。
+- 当前大阶段：学习 Python 的语句和语法（Statements and Syntax）。
+- 已完成大阶段：`P1_Getting_Started`、`P2_Types_and_Operations`。
+- 当前小阶段：`C10_Introducing_Python_Statements`，主题是表达式、语句、代码块与执行顺序。
+- 当前状态：已根据 `P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md` 正式进入 `P3_Statements_and_Syntax`，并开始 C10 的可运行小实验。
+- 本阶段关注：把已经掌握的对象模型迁移到表达式求值、语句执行、缩进代码块和控制流入口判断中。
 
 当前综合判断：
 
@@ -44,6 +45,7 @@
 - 能把 `dict`、`list`、`set`、`Counter`、`namedtuple`、JSON/CSV 和文件写入整合到游戏本地化资源审计项目中，并能围绕项目解释内部对象模型和外部持久化边界。
 - 已通过字典和文件阶段末测验，能独立说明 `object_pairs_hook`、JSON 重复 key 折叠、`Resource` 多层模型、`audit_resources()` 集合运算、`--observe` 对象观察窗和完整报告输出链路。
 - 已开始主动关注学习仓库的长期演化：能发现项目归属、依赖归属、文档职责、重复逻辑与公共抽象时机等工程问题。
+- 已完成从 Python `3.9.13` 到 Python `3.14.5` 的并行迁移：能区分基础解释器、虚拟环境、`python` 命令、`py` 启动器、持久化 `PATH` 和可选全局 `sitecustomize.py` 的职责边界。
 
 当前最需要精修的点：
 
@@ -68,6 +70,7 @@
 | 列表和元组 | 已通过，良好偏上 | 阶段测验建议得分 `88 / 100`；已完成列表/元组系统讲解、迷你项目代码审查、JSON/CSV 输入扩展和结构化 JSON 报告扩展 | `_replace()` 非深拷贝、`deepcopy` 与不可变对象共享、JSON 报告控制流、嵌套列表重复引用层级仍需复盘 |
 | 集合与哈希 | 良好，已通过阶段验收 | 阶段测验中能解释 `hash()` 与 `==`、自定义键合同、`set` 差集/交集和 `Counter` 统计 | 继续警惕 `frozenset` 也要求元素可哈希，不要把“冻结”说成无条件可哈希 |
 | 字典和文件 | 已通过，优秀 | 字典和文件阶段测验建议得分 `96 / 100`；能解释映射、视图、浅拷贝、文件、编码、JSON/CSV 和阶段项目链路 | 后续需把文件/JSON 边界迁移到更复杂的异常处理、函数封装和模块设计中 |
+| 语句和语法导论 | 正在推进 | 已按 P3 启动模板进入 `C10_Introducing_Python_Statements`，并建立 C10 README 与可运行小实验 | 重点防止混淆表达式值、语句执行、副作用、输出、回显和代码块对象化 |
 | 工程实践能力 | 明显增强，具备小型项目级整合能力 | 已完成并改良 `projects/P2_Types_and_Operations/localization_resource_auditor/`，并在测验中准确解释其 CLI、文件读取、JSON/CSV 解析、审计、报告和 `--observe` 链路 | 设计题中要更明确区分内部报告模型、JSON 文本和外部文件字节 |
 
 ---
@@ -251,6 +254,65 @@
 
 ---
 
+### 2026-06-03：Python 3.14.5 并行迁移完成，P2 跨阶段治理收束
+
+结论：
+
+Python `3.14.5` 并行环境已经建立并通过命令行回归。后续日常学习默认使用
+`.venv-py314`；旧 Python `3.9.13` 与旧 `.venv` 保留为历史回归基线。当前
+不需要为新环境复制全局 `sitecustomize.py`。PyCharm 升级因用户个人安排暂缓；
+项目 SDK 已于 2026-06-04 指向 `.venv-py314\Scripts\python.exe`，但 PyCharm
+`2023.3.5` 会显示为 `Python 3.10 (LearningPython5E)`。IDE 对 Python `3.14`
+的代码分析、调试协议和新语法支持仍不视为完整验证。
+
+新增证据：
+
+- 已从 Python 官方来源下载并校验 Python `3.14.5` 64 位安装程序，安装到
+  `D:\MySoftwareDownload\Python\Python314`。
+- 已创建 `.venv-py314`，仅安装 `myimporter_system` 声明依赖及传递依赖；
+  新环境没有复制旧 `.venv` 中的历史残留 `requests`。
+- 已验证 `python` 仍指向旧 Python `3.9.13`，而 `py` 与 `py -3.14` 指向新
+  Python `3.14.5`。这是一种有意保留的并行状态。
+- 已通过 C9 脚本、`localization_resource_auditor`、`myimporter` 安装器、
+  RuntimeService、CLI、子进程 worker 和 Web UI 的代表性回归。
+- Python `3.14` 暴露出的 Windows 路径无效转义警告已经通过原始字符串修复。
+- 已在 PyCharm 中把项目 SDK 指向 `.venv-py314\Scripts\python.exe`；命令行
+  验证该解释器实际为 Python `3.14.5`，但旧 PyCharm 显示标签不准确。
+- 已移除完成使命的临时续接模板与恢复锚点，长期文档只保留路线图、迁移记录
+  和仓库结构调整记录。
+
+下一步：
+
+已生成 `P3_Statements_and_Syntax` 的新会话启动模板。下一步在新会话中从
+`C10_Introducing_Python_Statements` 正式进入下一大阶段。进入新的 PowerShell
+会话后，先激活 `.venv-py314` 并确认解释器版本。
+
+---
+
+### 2026-06-03：正式进入 P3/C10 语句导论
+
+结论：
+
+已正式进入 `P3_Statements_and_Syntax`，当前活动小阶段为
+`C10_Introducing_Python_Statements`。本阶段不提前系统展开 C11-C15，而是先
+建立表达式、语句、代码块和执行顺序的基础模型。
+
+新增证据：
+
+- 已读取 `docs/P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md` 并按其约束推进。
+- 已新增 `notes/P3_Statements_and_Syntax.md`，作为 P3 主线笔记入口。
+- 已在 `practice/P3_Statements_and_Syntax/C10_Introducing_Python_Statements/`
+  建立 README 和第一批可运行小实验。
+
+本阶段重点观察：
+
+- 是否能稳定区分表达式求值与语句执行。
+- 是否能把 `print()` 输出、函数返回值、脚本执行和交互式回显分层说明。
+- 是否能理解缩进代码块是源码语法结构，不是运行时容器对象。
+- 是否能把 P2 的对象模型迁移到“程序下一步执行什么”的语句层问题中。
+
+---
+
 ## 4. 高频误区观察表
 
 | 高频误区 | 当前状态 | 修正规则 |
@@ -316,4 +378,4 @@ Types and Operations 大阶段已通过。进入 `P3_Statements_and_Syntax` 时�
 
 ## 7. 当前一句话画像
 
-你已经通过 Types and Operations 大阶段收束验收，成为“对象模型驱动的 Python 学习者”。接下来真正决定你能否进入稳定的中级入门，是能否把这套分层思维迁移到控制流、函数、模块、异常、测试、OOP 和逐渐成熟的工程结构中。
+你已经通过 Types and Operations 大阶段收束验收，成为“对象模型驱动的 Python 学习者”，并已正式进入 Statements and Syntax。接下来真正决定你能否进入稳定的中级入门，是能否把这套分层思维迁移到表达式、语句、控制流、函数、模块、异常、测试、OOP 和逐渐成熟的工程结构中。

@@ -5,6 +5,12 @@
 默认运行会读取 `data/source_en.json`、`data/target_zh.json` 和 `data/glossary.csv`。
 JSON 资源文件按 `utf-8-sig` 读取，因此普通 UTF-8 与带 UTF-8 BOM 的导出文件都可处理。
 
+后续示例默认已经在仓库根目录激活 `.venv-py314`：
+
+```powershell
+.\.venv-py314\Scripts\Activate.ps1
+```
+
 ```powershell
 python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py
 python projects\P2_Types_and_Operations\localization_resource_auditor\localization_auditor.py --observe

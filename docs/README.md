@@ -5,16 +5,15 @@
 
 ## Current Documents
 
-- [`CURRENT_SESSION_CONTINUATION_TEMPLATE.md`](CURRENT_SESSION_CONTINUATION_TEMPLATE.md)：
-  可直接粘贴到新会话的续接启动模板。用于完成当前跨阶段治理任务，不代表
-  正式开始下一学习大阶段。
-- [`CROSS_STAGE_TRANSITION_HANDOFF.md`](CROSS_STAGE_TRANSITION_HANDOFF.md)：
-  上下文压缩或任务中断后的恢复锚点。先读它，再按需读取详细计划。
+- [`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md`](P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md)：
+  正式进入 `P3_Statements_and_Syntax` 的新会话启动模板。它从
+  `C10_Introducing_Python_Statements` 开始，不是中断恢复锚点。
 - [`PYTHON_LEARNING_ROADMAP.md`](PYTHON_LEARNING_ROADMAP.md)：可动态调整的
   Python 后续学习路线图。每次跨越大阶段边界，或学习目标发生明显变化时，
   应结合最新学习画像复核。
 - [`PYTHON_ENVIRONMENT_MIGRATION_PLAN.md`](PYTHON_ENVIRONMENT_MIGRATION_PLAN.md)：
-  从 Python `3.9.13` 并行迁移到受支持版本的盘点、决策点与回归清单。
+  从 Python `3.9.13` 并行迁移到 Python `3.14.5` 的盘点、执行记录、日常
+  使用边界与回归清单。
 - [`REPOSITORY_RESTRUCTURE_PLAN.md`](REPOSITORY_RESTRUCTURE_PLAN.md)：仓库结构
   重构的历史执行记录。它最初用于处理中断恢复，现在保留为目录职责和验证
   基线的来源。
@@ -28,6 +27,9 @@
 - 重要结构调整记录；
 - 跨项目技术决策；
 - 环境集成说明。
+
+长任务如果再次遇到上下文压缩或额度边界，可以临时新增恢复锚点；任务完成后
+应复核其长期价值，避免让过期续接模板长期占据文档索引。
 
 不适合放入 `docs/`：
 

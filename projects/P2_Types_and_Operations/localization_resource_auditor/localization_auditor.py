@@ -1,4 +1,4 @@
-"""
+r"""
 Game localization resource auditor.
 
 This project intentionally keeps Python's core object model visible:

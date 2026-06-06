@@ -1,4 +1,4 @@
-"""
+r"""
 Dict copy levels, Counter, defaultdict, and mutable defaults.
 
 Run:

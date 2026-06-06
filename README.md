@@ -10,6 +10,8 @@
   `P2_Types_and_Operations`。
 - **小阶段**：对应大阶段中的章节，例如
   `P2_Types_and_Operations/C9_Dictionaries_and_Files`。
+- **会话粒度**：默认一个新会话只正式推进一个 `CHAPTER`。完成当前章节收束
+  后，为下一个章节生成新的启动模板并另开会话。
 - **阶段成果**：在一个大阶段接近收束时形成的可复盘项目，统一归档到
   `projects/<PART>/`。
 
@@ -36,6 +38,23 @@ LearningPython5E/
 仓库根目录不再设置统一 `requirements.txt`。学习笔记和标准库练习不需要共享
 运行时依赖；确有第三方依赖的阶段成果应在自己的项目目录中声明。
 
+## 日常学习环境
+
+后续学习默认使用 Python `3.14.5` 的仓库级虚拟环境。在仓库根目录进入新的
+PowerShell 会话后，先运行：
+
+```powershell
+.\.venv-py314\Scripts\Activate.ps1
+python --version
+```
+
+预期版本为 Python `3.14.5`。完成学习后可以运行 `deactivate` 离开虚拟环境。
+
+当前刻意保留并行状态：未激活虚拟环境时，裸 `python` 仍指向旧 Python
+`3.9.13`；`py` 与 `py -3.14` 指向新 Python `3.14.5`。旧 `.venv` 仅作为
+历史回归基线，不再作为日常学习环境。详细说明见
+[`docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md`](docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md)。
+
 ## 当前阶段成果
 
 ### P1 Getting Started
@@ -54,8 +73,12 @@ LearningPython5E/
 
 - `P1_Getting_Started`：已完成。
 - `P2_Types_and_Operations`：已通过收束验收。
-- 当前处于跨阶段治理期：完成历史项目梳理、仓库结构调整、路线规划和环境
-  现代化准备后，进入 `P3_Statements_and_Syntax`。
+- 当前处于跨阶段治理收束期：历史项目梳理、仓库结构调整、路线规划和 Python
+  `3.14.5` 命令行迁移已经完成。PyCharm 升级暂缓；项目 SDK 已指向
+  `.venv-py314\Scripts\python.exe`，但旧 PyCharm 会显示为 `Python 3.10`
+  标签；下一步准备
+  使用 [`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md`](docs/P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md)
+  在新会话中正式进入 `P3_Statements_and_Syntax`。
 
 ## 仓库治理
 

@@ -1,4 +1,4 @@
-"""
+r"""
 Hash and equality: why dict keys must be hashable.
 
 Run:

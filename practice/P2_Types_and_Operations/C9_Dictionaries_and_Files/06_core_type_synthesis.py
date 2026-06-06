@@ -1,4 +1,4 @@
-"""
+r"""
 Core type synthesis for the end of Types and Operations.
 
 Run:
