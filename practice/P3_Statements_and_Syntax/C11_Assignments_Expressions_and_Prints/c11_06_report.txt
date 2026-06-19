@@ -1,0 +1,3 @@
+Missing keys:
+menu.start
+settings.audio

@@ -1,0 +1,7 @@
+# Local SQLite databases are runtime data, not source artifacts.
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*

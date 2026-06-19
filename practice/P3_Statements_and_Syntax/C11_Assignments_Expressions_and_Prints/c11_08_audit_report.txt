@@ -1,0 +1,8 @@
+Localization Audit
+==================
+Source language: en
+Target language: ja
+Stats: {'common': 3, 'missing_in_ja': 1, 'extra_in_ja': 1}
+Common keys: {'settings.audio', 'menu.start', 'menu.exit'}
+Missing in JA: {'settings.video'}
+Extra in JA: {'dialogue.intro'}

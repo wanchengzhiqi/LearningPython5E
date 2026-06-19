@@ -144,8 +144,11 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 启动模板：已生成并用于启动 `C10_Introducing_Python_Statements`；C10
-  收束后应为 C11 生成新的启动模板并另开会话。
+- P3 启动模板：`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md` 已用于启动
+  `C10_Introducing_Python_Statements`；C10 收束后生成的
+  `C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md` 已用于推进 C11。
+  C11 阶段测验已通过，当前待完成阶段末文档收束并生成 C12 新会话启动模板；
+  下一正式小阶段为 `C12_if_Tests_and_Syntax_Rules`。
 
 ## 9. 官方参考
 

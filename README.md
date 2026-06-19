@@ -69,16 +69,23 @@ python --version
   游戏本地化资源审计 CLI，用于整合字典、集合、列表、元组、文件对象、
   JSON、CSV、编码边界和结构化报告。
 
-## 当前学习进度
+### P3 Statements and Syntax
+
+- [`prompt_template_manager`](projects/P3_Statements_and_Syntax/prompt_template_manager/README.md)：
+  本地 Prompt 模板数据库 GUI/CLI 工具，用 SQLite 保存 prompt 与说明内容，
+  并用 tkinter 提供简单的增删改查界面。
+
+## 学习进度入口
 
 - `P1_Getting_Started`：已完成。
 - `P2_Types_and_Operations`：已通过收束验收。
-- 当前处于跨阶段治理收束期：历史项目梳理、仓库结构调整、路线规划和 Python
-  `3.14.5` 命令行迁移已经完成。PyCharm 升级暂缓；项目 SDK 已指向
-  `.venv-py314\Scripts\python.exe`，但旧 PyCharm 会显示为 `Python 3.10`
-  标签；下一步准备
-  使用 [`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md`](docs/P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md)
-  在新会话中正式进入 `P3_Statements_and_Syntax`。
+- 当前学习主线已进入 `P3_Statements_and_Syntax`。章级进度、当前/下一小阶段、
+  阶段测验状态和新会话启动模板，以
+  [`docs/PYTHON_LEARNING_ROADMAP.md`](docs/PYTHON_LEARNING_ROADMAP.md)、
+  [`notes/Python_Learning_Profile.md`](notes/Python_Learning_Profile.md) 和
+  [`docs/README.md`](docs/README.md) 为准。
+- 本 README 只保留仓库级进度入口和阶段成果索引，不逐章镜像当前小阶段，
+  以免每次章节收束后频繁漂移。
 
 ## 仓库治理
 

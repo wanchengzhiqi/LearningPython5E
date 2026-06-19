@@ -35,10 +35,14 @@
 - 每次跨越大阶段边界，或阶段测验暴露出反复薄弱点时，复核路线图并按需更新。
 - 小阶段收束、大阶段收束、路线调整、环境迁移、仓库重构或长期流程规则改变
   后，按职责复核 `README.md`、`AGENTS.md`、`docs/` 索引、路线图、学习画像
-  和相关项目文档，避免长期记录漂移。用户级 Codex 记忆只在用户明确要求时
+  和相关项目文档，避免长期记录漂移。`README.md` 只保留仓库级进度入口和
+  读者索引；`AGENTS.md` 只保留持久规则、安全边界、目录职责、环境边界和
+  代理工作流，不逐章镜像当前小阶段。用户级 Codex 记忆只在用户明确要求时
   同步。
-- 当前已完成 `P2_Types_and_Operations` 收束验收，下一大阶段计划为
-  `P3_Statements_and_Syntax`。
+- `P2_Types_and_Operations` 已通过收束验收，当前学习主线已进入
+  `P3_Statements_and_Syntax`。具体小阶段状态、下一章启动模板和阶段测验结果
+  以 `docs/PYTHON_LEARNING_ROADMAP.md`、`notes/Python_Learning_Profile.md`
+  和 `docs/README.md` 为准。
 - Python `3.14.5` 并行安装、`.venv-py314` 创建和命令行回归已经完成。
   旧 Python `3.9.13` 与旧 `.venv` 保留用于历史实验回归。PyCharm 升级暂缓；
   项目 SDK 已指向 `.venv-py314\Scripts\python.exe`，但 PyCharm `2023.3.5`
