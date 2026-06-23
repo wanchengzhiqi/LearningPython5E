@@ -13,14 +13,14 @@
 
 ## 1. 当前能力快照
 
-更新时间：2026-06-19
+更新时间：2026-06-21
 
 当前阶段位置：
 
 - 当前大阶段：学习 Python 的语句和语法（Statements and Syntax）。
 - 已完成大阶段：`P1_Getting_Started`、`P2_Types_and_Operations`。
 - 已完成小阶段：`C10_Introducing_Python_Statements`，阶段小测建议得分 `96 / 100`；`C11_Assignments_Expressions_and_Prints`，阶段测验建议得分 `100 / 100`。
-- 当前状态：C11 阶段测验已完成逐题审批并通过；阶段末笔记整理和下一章启动模板尚待后续收束。
+- 当前状态：C11 阶段测验、学习画像同步和阶段末笔记整理均已完成；C12 新会话启动模板已经生成，C11 正式收束。
 - 下一小阶段：`C12_if_Tests_and_Syntax_Rules`，后续重点是真值测试、布尔短路、比较链、条件表达式和必要的 `match` 边界。
 
 当前综合判断：

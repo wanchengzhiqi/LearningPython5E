@@ -33,6 +33,25 @@ python practice\P3_Statements_and_Syntax\C11_Assignments_Expressions_and_Prints\
 - `04_expression_statements_and_print_streams.py`：表达式语句、方法调用副作用、`print()` 返回值、`sep`、`end`、`file`、`flush` 与输出流。
 - `05_prompt_template_manager_c11_walkthrough.py`：复用 `projects/P3_Statements_and_Syntax/prompt_template_manager/` 的真实代码场景，把 C11 概念连回当前 P3 支持工具。
 
+以上 5 个脚本是本章的综合概览实验。以 C11 启动模板为唯一正式教学入口、
+按小步节奏推进时，还形成了以下逐步学习记录：
+
+- `P3_C11_01_assignment_model.py`：普通赋值、名字绑定、对象修改与重新绑定。
+- `P3_C11_02_chain_and_multi_assignment.py`：链式赋值、多目标赋值与共享引用。
+- `P3_C11_03_unpacking_assignment.py`：序列解包、星号解包、嵌套解包与失败边界。
+- `P3_C11_04_attribute_subscript_slice_assignment.py`：属性、下标、切片赋值目标与对象协议。
+- `P3_C11_05_augmented_assignment.py`：增强赋值、别名可见性与非事务式副作用。
+- `P3_C11_06_expression_statements_and_print.py`：表达式语句、结果丢弃和 `print()` 返回值。
+- `P3_C11_07_print_engineering_boundary.py`：stdout、stderr、文件流、刷新和写入边界。
+- `P3_C11_08_localization_audit_review.py`：本地化审计场景下的阶段综合复盘。
+
+阶段测验与逐题批改记录保存在：
+
+- `stage_quiz_assignments_expressions_and_prints.md`：A-F 六部分阶段测验、原始作答、逐题批改、阶段评语与学习画像更新。
+
+建议按 `P3_C11_01` 至 `P3_C11_08` 的顺序复盘；需要快速横向回顾时，再运行
+前面的 5 个综合概览脚本。
+
 ## 本章必须纠正的混淆点
 
 1. `x = expr` 不是“返回 expr 的值”。赋值语句的效果是让目标绑定或写入右侧对象。

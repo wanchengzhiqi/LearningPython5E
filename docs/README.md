@@ -11,6 +11,9 @@
 - [`C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md`](C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md)：
   进入 `P3_Statements_and_Syntax / C11_Assignments_Expressions_and_Prints`
   的新会话启动模板。它基于 C10 阶段小测和阶段笔记生成，只正式推进 C11。
+- [`C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md`](C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md)：
+  进入 `P3_Statements_and_Syntax / C12_if_Tests_and_Syntax_Rules` 的新会话
+  启动模板。它基于 C11 阶段测验、阶段笔记和最新学习画像生成，只正式推进 C12。
 - [`PYTHON_LEARNING_ROADMAP.md`](PYTHON_LEARNING_ROADMAP.md)：可动态调整的
   Python 后续学习路线图。每次跨越大阶段边界，或学习目标发生明显变化时，
   应结合最新学习画像复核。
