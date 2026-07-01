@@ -424,7 +424,7 @@ load_resource.__doc__ 是 "Function docstring."。
    你的理解：
        代码块缩进是语法结构；表达式跨行缩进相对更像可读性排版。
 
-   修正：
+    修正：
        方向正确，但必须加条件：
        表达式跨行缩进要处在合法续行环境中，如 ()、[]、{} 内部或显式续行。
        否则行首缩进仍可能触发语法错误。
@@ -459,9 +459,9 @@ load_resource.__doc__ 是 "Function docstring."。
    ```tex
    你的理解：
        特殊位置字符串字面量会成为文档字符串；
-       三引号常用是因为方便多行。
+        三引号常用是因为方便多行。
 
-   修正：
+    修正：
        主干正确。
        还要注意 docstring 取决于位置和字符串字面量形式，不取决于是否三引号；
        单引号、双引号也可以。
@@ -1631,7 +1631,7 @@ visible = missing_keys + [...]
        C1 题干“三条赋值语句”的范围可能有歧义；
        D2 文字中的 text += "!" 与实际代码 text += ".start" 不一致。
 
-   正确处理：
+    正确处理：
        明确指出歧义，以实际待执行代码为准，并说明不影响本题核心结论。
    ```
 
@@ -1732,3 +1732,833 @@ visible = missing_keys + [...]
 进入 `C12_if_Tests_and_Syntax_Rules` 后，继续沿用同一套方法：先判断条件表达式
 如何求值，再判断 `if` 是否进入代码块；同时重点观察真值测试协议、`and` / `or`
 短路时返回的操作数对象、比较链求值顺序，以及条件表达式和 `if` 语句的边界。
+
+## 14. C12 条件、真值测试与语法规则：短路求值、比较链和控制流选择
+
+### 14.0 阶段状态和可追溯入口
+
+本阶段正式名称：`C12_if_Tests_and_Syntax_Rules`。
+
+当前阶段已经完成：正式实验脚本、逐步预测学习、阶段测验、逐题批改和学习画像同步。
+阶段测验建议得分为 `100 / 100`，小阶段通过。
+
+本阶段的正式入口是：
+
+```tex
+docs/C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md
+```
+
+实践与验收材料主要位于：
+
+```tex
+practice/P3_Statements_and_Syntax/C12_if_Tests_and_Syntax_Rules/
+    README.md
+    01_truth_testing_objects_and_protocols.py
+    02_short_circuit_operand_results.py
+    03_comparisons_identity_and_membership.py
+    04_comparison_chains_evaluation_order.py
+    05_if_elif_else_branch_selection.py
+    06_conditional_expressions_and_readability.py
+    07_localization_rule_decision_pipeline.py
+    08_prompt_manager_conditions_and_match_boundaries.py
+    stage_quiz_if_tests_and_syntax_rules.md
+```
+
+目录中形如 `P3_C12_*.py`、`audit_control.py`、`synthetic_function_1st_edition.py`
+的文件保留为个人练手或测试轨迹，不作为本阶段正式教学顺序和验收依据。
+
+本阶段延续 C10/C11 的核心方法：
+
+```tex
+C10：表达式求值 vs 语句执行。
+C11：右侧求值、左侧目标处理、名字绑定、原地修改和输出副作用。
+C12：条件位置先得到对象，再按真值测试和控制流规则选择后续路径。
+```
+
+### 14.1 阶段地图
+
+本阶段按启动模板逐步推进，顺序如下：
+
+```tex
+1. 真值测试基础：if x 不是 if x == True。
+2. 自定义真值协议：__bool__()、__len__()、默认真值和错误边界。
+3. and / or / not：短路求值、返回操作数对象和副作用是否发生。
+4. 比较、身份和成员测试：==、is、in 问的是不同问题。
+5. 比较链：中间表达式只求值一次，失败后短路。
+6. if / elif / else：互斥分支链、多个独立 if、缩进归属和 pass。
+7. 条件表达式：x if condition else y 产生值，不适合塞复杂副作用。
+8. 本地化审计决策：strict、dry_run、缺失 key、空译文和输出路径。
+9. match 边界：结构化模式分派，不是 C / Java 风格 switch。
+```
+
+贯穿全章的固定分析链：
+
+```tex
+第一问：条件位置里的表达式是否真正求值？
+第二问：该表达式返回哪个对象？
+第三问：该对象如何参与真值测试？
+第四问：and / or / 比较链是否短路？
+第五问：哪些调用、副作用或异常没有发生？
+第六问：控制流进入哪个代码块？
+第七问：最终名字绑定、对象修改或外部输出发生了什么？
+```
+
+### 14.2 真值测试的本质：对象先产生，真假再判定
+
+`if` 后面的条件位置不是只能放 `True` 或 `False`。它放的是一个表达式；表达式先求值，得到一个对象，然后 Python 对这个对象做真值测试。
+
+最核心的区别：
+
+```python
+if x:
+    ...
+
+if x == True:
+    ...
+```
+
+二者不是一回事。
+
+```tex
+if x:
+    对 x 绑定的对象做真值测试。
+
+x == True:
+    做相等性比较，问 x 绑定的对象是否与 True 相等。
+```
+
+典型例子：
+
+```python
+x = [1]
+
+print(bool(x))     # True
+print(x == True)  # False
+```
+
+`[1]` 是非空列表，因此真值为真；但列表 `[1]` 并不等于布尔对象 `True`。
+
+本阶段必须长期保留三层边界：
+
+```tex
+对象本体：
+    x 实际绑定的对象，例如 []、[""]、"0"、None、自定义实例。
+
+真值测试结果：
+    bool(x) 得到的 True 或 False。
+
+相等性比较结果：
+    x == True、x == False、x == "" 等比较表达式得到的 True 或 False。
+```
+
+容器的真值测试不递归检查内部所有元素：
+
+```python
+print(bool(""))    # False
+print(bool([""]))  # True
+```
+
+空字符串是假值；装着一个空字符串的列表是非空列表，因此是真值。
+
+工程规则：
+
+```tex
+1. 想判断“有没有元素”，可以使用 if items:。
+2. 想判断“所有元素是否都为真”，使用 all(items)。
+3. 想判断“是否存在任意真值元素”，使用 any(items)。
+4. 不要把 if items: 误写成 if items == True:。
+5. 对 None 与空字符串、空列表、0 有不同业务含义时，必须用 is None 精确判断。
+```
+
+### 14.3 真值协议：`__bool__()`、`__len__()` 和默认真值
+
+Python 对对象做真值测试时，不是“反复调用特殊方法直到某次返回 bool”。更准确的规则是：<u>按优先级选择一个入口，只调用该入口**一次**；返回类型不合规则直接报错。</u>
+
+规则可以压成这样：
+
+```tex
+1. 如果对象本身就是 True 或 False，真值判定直接得到对应真假。
+2. 否则，如果类型提供 __bool__()，调用一次；它必须返回真正的 bool 对象。
+3. 否则，如果类型提供 __len__()，调用一次；它必须返回非负整数。
+4. 否则，普通对象默认为真。
+```
+
+注意两条协议边界：
+
+```tex
+__bool__():
+    必须返回 True 或 False。
+    返回 1、[]、"yes" 等对象都会 TypeError。
+
+__len__():
+    必须返回非负整数。
+    返回 0 表示假；返回正整数表示真；返回负数会 ValueError。
+```
+
+典型实验：
+
+```python
+class ByLength:
+    def __len__(self):
+        print("__len__ called")
+        return 1
+
+
+class ByBoolAndLength:
+    def __bool__(self):
+        print("__bool__ called")
+        return False
+
+    def __len__(self):
+        print("__len__ should not be called")
+        return 1
+
+
+print(bool(ByLength()))         # 调用 __len__，结果 True
+print(bool(ByBoolAndLength()))  # 调用 __bool__，结果 False
+```
+
+本质总结：
+
+```tex
+__len__ 是没有 __bool__ 时的后备规则，
+不是 __bool__ 出错后的异常恢复机制。
+```
+
+你在本阶段测验中已经掌握：
+
+```tex
+1. 普通自定义对象没有 __bool__ 和 __len__ 时默认为真。
+2. StrictLocalizedEntries 有 __bool__ 时，不会退回去调用继承来的 __len__。
+3. __bool__ 返回 1 会 TypeError，不会把 1 再拿去真值测试。
+4. __len__ 返回 -1 是协议错误，不会被解释成真或假。
+```
+
+本阶段最后追问中，你提出过一个重要问题：如果条件位置表达式求值结果已经是 `bool` 对象，例如 `if True:`，是否还会机械调用特殊方法？
+
+修正规则：
+
+```tex
+if True:
+    表达式结果已经是布尔对象 True。
+    语义上就是对 True 做真值判定，结果为真。
+
+不要理解成：
+    Python 递归调用 __bool__ / __len__，直到某次返回 bool。
+
+应理解成：
+    条件表达式先得到一个对象；Python 用真值测试协议判定它为真或假。
+    对自定义对象，协议入口只按优先级选择一次；__bool__ 返回非 bool 会 TypeError。
+```
+
+这里也要区分两个说法：
+
+```tex
+条件位置里的表达式：
+    if 后面的普通表达式，例如 strict and issues。
+
+Python 语法里的条件表达式：
+    x if condition else y，用来二选一地产生一个值。
+```
+
+二者都涉及“条件”，但不是同一个语法概念。
+
+### 14.4 `and` / `or` / `not`：短路顺序和返回对象
+
+`and` / `or` 使用真值测试结果决定路径，但最终返回的是某个操作数对象本身，不保证返回 `bool`。
+
+规则：
+
+```tex
+a or b:
+    如果 a 为真，返回 a；否则返回 b。
+
+a and b:
+    如果 a 为假，返回 a；否则返回 b。
+
+not a:
+    先对 a 做真值测试，再返回相反的 bool 对象。
+```
+
+例子：
+
+```python
+print([] or "fallback")          # fallback
+print(["issue"] and "abort")    # abort
+print(not [])                    # True
+print(not ["issue"])             # False
+```
+
+工程上的典型坑：
+
+```python
+DEFAULT_PATH = "report.txt"
+
+def choose_bad(value):
+    return value or DEFAULT_PATH
+
+
+def choose_good(value):
+    return DEFAULT_PATH if value is None else value
+```
+
+如果 `value == ""` 是用户显式提供的有效值，`choose_bad("")` 会误把它替换成默认路径。
+
+因此：
+
+```tex
+value or default：
+    适合“所有假值都等同于没提供”的场景。
+
+default if value is None else value：
+    适合“只有 None 表示没提供，空字符串、0、空列表仍有业务含义”的场景。
+```
+
+短路还意味着未求值的表达式不会有副作用：
+
+```python
+def mark(name, value):
+    print("call", name)
+    return value
+
+
+print(mark("left", "") and mark("right", "unused"))
+```
+
+输出中不会出现 `call right`，因为左侧返回空字符串，`and` 已经能确定结果为左侧操作数。
+
+工程习惯：
+
+```tex
+1. 用 and / or 写条件时，先问它返回的是 bool 还是操作数对象。
+2. 如果返回值要写入结构化结果字段，必要时显式 bool(...)，让类型稳定。
+3. 不要依赖短路表达式隐藏重要副作用；重要动作优先写成清楚的 if 语句。
+4. 条件表达式未选中的分支不会求值，未选分支里的函数调用不会发生。
+```
+
+### 14.5 比较、身份、成员测试和比较链
+
+本阶段把几类看似相近的判断拆开：
+
+```tex
+== / !=：
+    相等性。问两个对象在值意义上是否相等。
+
+is / is not：
+    身份。问两个名字或表达式结果是否指向同一个对象。
+
+in / not in：
+    成员关系。问某对象是否作为成员出现在容器或可迭代对象中。
+
+bool(x) 或 if x:
+    真值测试。问对象在条件语境中为真还是为假。
+```
+
+例子：
+
+```python
+record_a = {"key": "menu.start", "text": ""}
+record_b = {"key": "menu.start", "text": ""}
+records = [record_a]
+
+print(record_a == record_b)       # True：内容相等
+print(record_a is record_b)       # False：不是同一个字典对象
+print(record_b in records)        # True：成员测试能找到相等元素
+print(record_b is records[0])     # False：身份不同
+print(record_a["text"] == "")     # True：相等性
+print(bool(record_a["text"]))     # False：真值测试
+print(record_a["text"] == False)  # False：相等性，不是在问真假
+```
+
+成员测试的复盘边界：
+
+```tex
+教学重点：
+    x in records 不是要求 x is 某个元素。
+
+更精细的说法：
+    序列成员测试按成员关系寻找匹配元素，通常以相等性为核心；
+    实现可能对同一对象做快速路径。
+
+复盘时要反对的是：
+    把 in 误解成身份测试。
+```
+
+比较链不是简单文本替换：
+
+```python
+def probe(name, value):
+    print("probe", name)
+    return value
+
+
+print(probe("low", 1) < probe("mid", 3) <= probe("high", 3))
+```
+
+比较链的关键：
+
+```tex
+1. 从左到右求值。
+2. 中间表达式只求值一次。
+3. 前段比较失败后，后续表达式不再求值。
+4. a < b > c 表示 a < b 且 b > c，不是 a < b 且 b < c。
+```
+
+工程应用：
+
+```tex
+low <= score < high：
+    适合数值区间判断。
+
+min_len <= len(text) <= max_len：
+    适合本地化文本长度规则。
+
+if key in mapping：
+    适合检查 key 是否存在。
+
+if value is None：
+    适合判断“没有提供”。
+
+if value == ""：
+    适合判断“明确提供了空字符串”。
+```
+
+禁忌：
+
+```tex
+1. 不要用 is 比较普通字符串、数字等业务值。
+2. 不要把 x == False 当成真值测试；要么 if not x，要么精确比较业务值。
+3. 不要把比较链当成 b 会求值两次的文本展开式。
+```
+
+### 14.6 `if` / `elif` / `else`、多个独立 `if`、缩进和 `pass`
+
+互斥分支链：
+
+```python
+if missing:
+    action = "abort missing"
+elif empty:
+    action = "abort empty"
+elif dry_run:
+    action = "preview"
+else:
+    action = "write"
+```
+
+规则：
+
+```tex
+同一个 if / elif / else 链最多执行一个代码块。
+一旦某个分支命中，后续 elif 条件不会再求值。
+```
+
+多个独立 `if`：
+
+```python
+issues = []
+
+if missing:
+    issues.append("missing")
+
+if empty:
+    issues.append("empty")
+
+if dry_run:
+    issues.append("dry-run")
+```
+
+规则：
+
+```tex
+每个 if 都独立检查，可能有多个代码块执行。
+```
+
+工程选型：
+
+```tex
+选择唯一最终动作：
+    if / elif / else。
+
+收集所有命中问题：
+    多个独立 if。
+```
+
+缩进决定代码块归属，不由“肉眼最近的 if”单独决定：
+
+```python
+if enabled:
+    if has_errors:
+        print("blocked")
+    else:
+        print("ready")
+else:
+    print("disabled")
+```
+
+这里第一个 `else` 属于内层 `if has_errors`，第二个 `else` 属于外层 `if enabled`。
+
+空代码块必须有真实语句，注释不算语句：
+
+```python
+if enabled:
+    # TODO: implement later
+else:
+    print("disabled")
+```
+
+这段代码在解析/编译阶段失败。严格说，在语法失败之前，`enabled = True` 也不会作为脚本语句真正执行，控制流也不会进入 `if`。
+
+合法占位：
+
+```python
+if enabled:
+    pass
+else:
+    print("disabled")
+```
+
+`pass` 是真正的 Python 语句，表示什么也不做。
+
+### 14.7 条件表达式：二选一地产生值
+
+Python 语法里的条件表达式是：
+
+```python
+value_if_true if condition else value_if_false
+```
+
+它是表达式，会产生一个值；`if` 语句是复合语句，用来选择执行哪个代码块。
+
+适合用条件表达式的情况：
+
+```python
+mode = "preview" if dry_run else "write"
+severity = "error" if strict and has_blocking_issue else "warning"
+path = "audit.txt" if output_path is None else output_path
+```
+
+不适合使用条件表达式的情况：
+
+```tex
+1. 分支里有多步副作用。
+2. 分支优先级需要多行说明。
+3. 需要收集多个问题，而不是选择一个值。
+4. 表达式写完后读者必须重新拆回 if / else 才看懂。
+```
+
+未选中的分支不会求值：
+
+```python
+def build(label, value):
+    print("build", label)
+    return value
+
+
+issues = ["empty text"]
+message = build("issues", issues) if issues else build("ok", [])
+```
+
+这里不会调用 `build("ok", [])`。
+
+本阶段要长期保留的写法判断：
+
+```tex
+简单值选择：
+    条件表达式可以提升紧凑性。
+
+业务动作选择：
+    if / elif / else 更清楚。
+
+多问题收集：
+    多个独立 if 更清楚。
+```
+
+### 14.8 本地化审计决策：把条件写成业务规则
+
+本阶段的工程主线是本地化资源审计：根据严格模式、预览模式、缺失 key、空译文和输出路径，决定严重级别、模式、动作和报告路径。
+
+一个清晰的最小设计：
+
+```python
+def decide_audit_action(strict, dry_run, missing_keys, empty_text_keys, output_path):
+    default_path = "audit.txt"
+
+    path = default_path if output_path is None else output_path
+    mode = "preview" if dry_run else "write"
+
+    issues = {
+        "missing": missing_keys,
+        "empty_text": empty_text_keys,
+    }
+
+    has_blocking_issue = bool(missing_keys or empty_text_keys)
+    severity = "error" if strict and has_blocking_issue else "warning"
+
+    if strict and missing_keys:
+        action = "abort-missing"
+        reason = "missing keys block strict audit"
+    elif strict and empty_text_keys:
+        action = "abort-empty"
+        reason = "empty translations block strict audit"
+    elif dry_run:
+        action = "preview"
+        reason = "dry run: preview only"
+    else:
+        action = "write"
+        reason = "write audit report"
+
+    return {
+        "action": action,
+        "severity": severity,
+        "mode": mode,
+        "path": path,
+        "issues": issues,
+        "reason": reason,
+        "has_blocking_issue": has_blocking_issue,
+    }
+```
+
+这段设计体现的规则：
+
+```tex
+1. output_path is None 才使用默认路径。
+2. output_path == "" 时保留空字符串，不被 or 默认值误伤。
+3. strict and missing_keys 优先级高于 strict and empty_text_keys。
+4. dry_run 只影响预览/写入模式，不掩盖阻断问题。
+5. has_blocking_issue 显式 bool(...)，让结构化返回字段类型稳定。
+6. action 是唯一最终动作，因此使用 if / elif / else。
+7. issues 字段负责保留所有问题，不把“收集问题”和“选择动作”混在一起。
+```
+
+这是 C12 进入工程实践后的关键提升：条件写法不只是“能跑”，还要表达业务优先级、返回类型稳定性和副作用边界。
+
+### 14.9 `match` / `case`：结构化模式分派，不是万能替代 `if`
+
+`match` 是结构化模式匹配语句，不是 C / Java 风格 `switch`。
+
+本阶段应掌握的边界：
+
+```tex
+1. case 按顺序尝试。
+2. 第一个匹配成功的 case 执行后，整个 match 结束。
+3. Python match 不会自动 fall-through。
+4. case _ 是通配模式，通常作为兜底。
+5. mapping pattern 可以允许 subject 有额外键。
+6. case {"key": key} 中右侧 key 通常是捕获绑定，不是比较已有变量。
+```
+
+例子：
+
+```python
+event = {"kind": "missing", "key": "menu.quit", "strict": True}
+
+match event:
+    case {"kind": "missing", "key": key, "strict": True}:
+        result = f"abort:{key}"
+    case {"kind": "empty_text", "key": key}:
+        result = f"empty:{key}"
+    case _:
+        result = "ok"
+```
+
+`key` 是捕获绑定。如果要和已有变量比较，通常使用 guard 或常量模式设计。
+
+工程选型：
+
+```tex
+适合 match：
+    已经有结构化事件、命令、消息或 AST-like 数据，需要按形状分派。
+
+不适合 match：
+    只是几个布尔条件按优先级做业务决策。
+
+本阶段决策函数内部：
+    if / elif / else 更直接。
+
+决策函数生成 event 后：
+    match 可以用于结构化分派。
+```
+
+### 14.10 本阶段你的理解轨迹、问题与修正规则
+
+本阶段整体表现很稳。你在每一步预测题中都能按“表达式求值 -> 对象 -> 真值测试 -> 短路/分支 -> 副作用”这条链解释。需要记录的是少数术语边界和一次重要追问。
+
+1. 关于 `if x` 与 `x == True`：
+
+   ```tex
+   预计误区：if x: 等价于 if x == True:。
+   修正：if x 是真值测试；x == True 是相等性比较。
+   学习结果：已稳定掌握。
+   ```
+
+2. 关于容器内部元素真假：
+
+   ```tex
+   预计误区：列表里有假值元素，所以列表整体为假。
+   修正：列表真值测试看容器是否为空，不递归检查内部所有元素。
+   学习结果：能准确解释 [""] 为真、"" 为假。
+   ```
+
+3. 关于 `__bool__()` 与 `__len__()`：
+
+   ```tex
+   预计误区：__bool__ 出错后 Python 会尝试 __len__。
+   修正：__len__ 只是没有 __bool__ 时的后备，不是异常恢复机制。
+   测验精修：LocalizedEntries 的 __len__ 是本类直接定义；StrictLocalizedEntries 才继承它。
+   ```
+
+4. 关于真值测试是否“反复调用直到 bool”：
+
+   ```tex
+   你的追问：if True: 这种条件对象已经是 bool 时，真值测试到底发生什么？
+
+   修正：表达式求值得到 True 后，条件语境判定它为真。
+   不要理解成反复机械调用 __bool__ / __len__ 直到返回 bool。
+   对自定义对象，协议入口只按优先级选择一次；__bool__ 返回非 bool 会 TypeError。
+   ```
+
+5. 关于 `and` / `or`：
+
+   ```tex
+   预计误区：and / or 统一返回 True 或 False。
+   修正：它们根据真值测试决定路径，但返回操作数对象。
+   学习结果：能准确解释 issue 和 should_abort 是 list，而不是 bool。
+   ```
+
+6. 关于默认值陷阱：
+
+   ```tex
+   预计误区：value or default 是通用默认值写法。
+   修正：它会替换所有假值，包括 ""、0、[]、None。
+   学习结果：能在 output_path == "" 场景中改用 is None 精确判断。
+   ```
+
+7. 关于成员测试：
+
+   ```tex
+   预计误区：x in records 要求 x 是列表里那个同一对象。
+   修正：成员测试不是身份要求，通常以相等性匹配为核心。
+   精修：后续可补入同一对象快速路径这一实现细节，但本阶段不依赖它。
+   ```
+
+8. 关于解析/编译期与运行期：
+
+   ```tex
+   测验精修点：非法空代码块在解析/编译阶段失败。
+   修正：失败前没有任何赋值语句真正执行，也没有控制流进入 if。
+   ```
+
+9. 关于 `match`：
+
+   ```tex
+   预计误区：match 是支持 fall-through 的 switch。
+   修正：match 是结构化模式匹配；命中一个 case 后整个 match 结束。
+   学习结果：能准确解释 mapping pattern 捕获绑定和 case _ 通配兜底。
+   ```
+
+### 14.11 阶段测验暴露的薄弱处与修正规则
+
+本阶段测验建议得分为 `100 / 100`，通过 `C12_if_Tests_and_Syntax_Rules` 小阶段。
+没有发现影响程序结果、控制流归属、对象返回值或协议规则判断的实质错误。
+
+不扣分但需要继续精修的三处术语：
+
+```tex
+精修点1：方法来源表述
+原表述倾向：LocalizedEntries 调用继承来的 __len__。
+修正：LocalizedEntries.__len__ 是本类直接定义；StrictLocalizedEntries 继承它但因 __bool__ 优先而不调用。
+
+精修点2：解析期与运行期
+原表述倾向：片段 2 中 enabled 绑定到 True 后会进入 if。
+修正：片段 2 语法非法，解析/编译阶段失败；没有运行期赋值和控制流进入。
+
+精修点3：成员测试细节
+原表述：record_b in records 使用相等性，不是身份。
+修正：对本阶段核心正确；更精细地说，成员测试不是身份要求，通常以相等性匹配为核心，具体实现可能对同一对象快速命中。
+```
+
+本次测验确认的强项：
+
+```tex
+1. 能稳定区分对象本体、真值测试结果和相等性比较。
+2. 能解释容器真值测试不递归检查内部元素。
+3. 能说明普通自定义对象默认真值，以及 __bool__ / __len__ 的优先级。
+4. 能判断 __bool__ 返回非 bool、__len__ 返回负数等协议错误。
+5. 能准确预测 and / or 的操作数返回和短路副作用。
+6. 能说明 not 始终返回 bool。
+7. 能区分 ==、is、in、bool(...) 问的是不同问题。
+8. 能预测比较链的求值顺序和短路行为。
+9. 能区分 if / elif / else 的互斥选择与多个独立 if 的问题收集。
+10. 能说明缩进决定 else 归属，注释不能充当代码块，pass 是合法语句。
+11. 能区分条件表达式产生值与 if 语句组织代码块。
+12. 能在本地化审计决策中写出清晰的阻断优先级和默认路径规则。
+13. 能说明 match 的结构化分派边界和无 fall-through 语义。
+```
+
+### 14.12 工程应知应会清单
+
+```tex
+1. if x 是真值测试，不是 x == True。
+2. bool(x) 返回布尔结果，不等于 x 本身。
+3. 空字符串、空容器、0、None 通常是假值。
+4. 非空容器为真，不递归检查元素真假。
+5. __bool__ 优先于 __len__。
+6. __bool__ 必须返回 bool；返回其它对象会 TypeError。
+7. __len__ 必须返回非负整数；0 假，正数真，负数错误。
+8. 普通自定义对象没有 __bool__ / __len__ 时默认为真。
+9. and / or 根据真值测试短路，但返回操作数对象。
+10. not 永远返回 True 或 False。
+11. 条件表达式和 if 语句都只求值实际需要的分支。
+12. 未求值的表达式不会产生函数调用、副作用或异常。
+13. value or default 会替换所有假值，不适合区分 None 与 ""。
+14. 只想在 None 时默认，使用 default if value is None else value。
+15. 结构化返回字段如果需要 bool，显式使用 bool(...)。
+16. == 问相等性，is 问身份；普通业务值比较用 ==。
+17. x in container 问成员关系，不要等同于身份测试。
+18. if not x 问真假；x == False 问相等性。
+19. 比较表达式返回 bool。
+20. 比较链中间表达式只求值一次。
+21. 比较链前段失败后，后续表达式不再求值。
+22. if / elif / else 链最多执行一个代码块。
+23. 多个独立 if 可能执行多个代码块。
+24. 唯一动作选择用 if / elif / else。
+25. 收集多个问题用多个独立 if。
+26. 缩进决定代码块归属。
+27. 注释不能充当代码块；pass 可以。
+28. 语法非法时，脚本在解析/编译阶段失败，运行期语句不会执行。
+29. 条件表达式适合简单值选择，不适合复杂副作用。
+30. match 适合结构化数据分派，不是所有 if / elif 的替代品。
+31. Python match 不自动 fall-through。
+32. case {"key": key} 通常是捕获绑定，不是比较已有变量。
+33. case _ 是通配兜底。
+34. CLI 和审计工具中要分清：阻断问题、警告问题、dry-run、输出路径和报告副作用。
+35. 条件写法优先服务业务语义和可维护性，不要为了短而牺牲可读性。
+```
+
+### 14.13 阶段精髓小结
+
+```tex
+1. C12 的核心不是会写 if，而是能解释条件控制流为什么走到某条路径。
+2. 条件位置先求值表达式，得到对象；然后对象接受真值测试。
+3. if x 与 x == True 是不同问题：真值测试 vs 相等性比较。
+4. bool(x) 是真值结果，不是 x 本身。
+5. 容器真值看空不空，不递归检查元素真假。
+6. 自定义对象真值协议优先看 __bool__，再看 __len__，否则默认真。
+7. __bool__ 返回类型不合法不会被 __len__ 补救。
+8. __len__ 返回整数，由长度是否为 0 决定真假。
+9. and / or 不保证返回 bool；它们返回被规则选中的操作数对象。
+10. not 保证返回 bool。
+11. 短路意味着未被求值的一侧没有调用、没有副作用、没有异常。
+12. value or default 是便利写法，也是默认值陷阱。
+13. ==、is、in、bool(...) 分别问相等性、身份、成员关系和真假。
+14. 比较链不是文本替换；中间表达式只求值一次。
+15. if / elif / else 用于互斥选择，多个独立 if 用于多项收集。
+16. 缩进是语法结构，决定 else 归属；注释不能占据代码块。
+17. 条件表达式产生值，if 语句组织代码块。
+18. match 是结构化模式匹配，不是带 fall-through 的 switch。
+19. 工程条件要表达优先级、返回类型和副作用边界。
+20. C12 的价值，是把 C10 的语句模型和 C11 的赋值/副作用模型推进到“哪些代码会执行、哪些代码不会执行”。
+```
+
+进入 `C13_while_and_for_Loops` 后，要把这套条件控制流模型继续迁移到循环：每轮条件如何重新求值、循环体如何改变退出条件、`break` / `continue` 如何改变控制流、循环 `else` 何时执行，以及遍历过程中修改容器会带来什么风险。

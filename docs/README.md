@@ -14,6 +14,9 @@
 - [`C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md`](C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md)：
   进入 `P3_Statements_and_Syntax / C12_if_Tests_and_Syntax_Rules` 的新会话
   启动模板。它基于 C11 阶段测验、阶段笔记和最新学习画像生成，只正式推进 C12。
+- [`C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md`](C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md)：
+  进入 `P3_Statements_and_Syntax / C13_while_and_for_Loops` 的新会话启动模板。
+  它基于 C12 阶段测验、阶段笔记和最新学习画像生成，只正式推进 C13。
 - [`PYTHON_LEARNING_ROADMAP.md`](PYTHON_LEARNING_ROADMAP.md)：可动态调整的
   Python 后续学习路线图。每次跨越大阶段边界，或学习目标发生明显变化时，
   应结合最新学习画像复核。
