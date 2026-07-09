@@ -140,18 +140,20 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
 - 跨阶段治理收束期已经完成：历史项目、仓库结构、路线图和 Python `3.14.5`
   命令行迁移已经完成。
 - 当前大阶段：`P3_Statements_and_Syntax`；`C10_Introducing_Python_Statements`、
-  `C11_Assignments_Expressions_and_Prints` 与 `C12_if_Tests_and_Syntax_Rules`
-  均已通过阶段测验，下一小阶段为 `C13_while_and_for_Loops`。
+  `C11_Assignments_Expressions_and_Prints`、`C12_if_Tests_and_Syntax_Rules` 与
+  `C13_while_and_for_Loops` 均已通过阶段测验，下一小阶段为
+  `C14_Iterations_and_Comprehensions`。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
 - P3 启动模板：`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md` 已用于启动
   `C10_Introducing_Python_Statements`；
   `C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md` 已用于推进 C11；
-  `C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md` 已用于推进 C12。C12
-  阶段测验、学习画像同步和阶段笔记整理均已完成；现已生成
-  `C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md`。下一步应另开新会话，正式推进
-  `C13_while_and_for_Loops`。
+  `C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md` 已用于推进 C12；
+  `C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md` 已用于推进 C13。C13 阶段测验、
+  学习画像同步、阶段笔记整理和收束追问补充均已完成；现已生成
+  `C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md`。下一步应另开新会话，
+  正式推进 `C14_Iterations_and_Comprehensions`。
 
 ## 9. 官方参考
 

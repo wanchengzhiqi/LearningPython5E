@@ -34,11 +34,15 @@ def 语句执行 vs 函数体调用执行
 已完成小阶段：
     C10_Introducing_Python_Statements
     C11_Assignments_Expressions_and_Prints
+    C12_if_Tests_and_Syntax_Rules
+    C13_while_and_for_Loops
 阶段小测：
     C10：96 / 100，通过
     C11：100 / 100，通过
-当前收束状态：C11 阶段测验审批与阶段末笔记已完成
-下一小阶段：C12_if_Tests_and_Syntax_Rules
+    C12：100 / 100，通过
+    C13：99 / 100，通过
+当前收束状态：C13 阶段测验审批、学习画像同步、阶段末笔记整理、收束追问补充和 C14 新会话启动模板已完成
+下一小阶段：C14_Iterations_and_Comprehensions
 ```
 
 语句清单专题按 Python 3.14 官方语言参考中的 simple statements 与 compound
@@ -2562,3 +2566,1197 @@ match event:
 ```
 
 进入 `C13_while_and_for_Loops` 后，要把这套条件控制流模型继续迁移到循环：每轮条件如何重新求值、循环体如何改变退出条件、`break` / `continue` 如何改变控制流、循环 `else` 何时执行，以及遍历过程中修改容器会带来什么风险。
+
+## 15. C13 while 与 for 循环：重复执行、控制流跳转和安全遍历
+
+`C13_while_and_for_Loops` 的真正目标不是“会写两个循环语法”，而是把 C12 的条件控制流模型推进到重复执行：
+
+```tex
+循环开始前：
+    条件表达式或可迭代对象如何准备下一步。
+
+每一轮：
+    变量绑定到哪个对象；
+    哪些赋值、原地修改、输出或追加副作用发生；
+    continue 跳过了哪些语句；
+    break 终止了哪一层循环。
+
+循环结束后：
+    是正常耗尽、条件变假，还是 break 提前终止；
+    循环 else 是否执行；
+    循环变量、队列、统计字段、报告对象最终处于什么状态。
+```
+
+本阶段延续本地化资源审计语境：逐条扫描资源、跳过禁用记录、收集普通问题、遇到阻断结构错误提前停止、生成结构稳定的 `report`。
+
+### 15.0 阶段状态和可追溯入口
+
+```tex
+2026-07-01：正式进入 C13 while 与 for 循环。
+2026-07-07：C13 阶段测验完成审批，建议得分 99 / 100，通过。
+```
+
+相关阶段文件：
+
+```tex
+docs/C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md
+practice/P3_Statements_and_Syntax/C13_while_and_for_Loops/
+practice/P3_Statements_and_Syntax/C13_while_and_for_Loops/stage_quiz_while_and_for_loops.md
+notes/Python_Learning_Profile.md
+```
+
+阶段脚本和样例数据：
+
+```tex
+01_while_condition_rechecks_and_exit_state.py
+02_sentinel_loop_break_and_continue.py
+03_loop_else_normal_vs_break.py
+04_for_iterables_and_variable_binding.py
+05_range_enumerate_zip_selection.py
+06_mutating_while_iterating_risks.py
+07_localization_resource_scan_loop_pipeline.py
+08_prompt_manager_loop_reading_walkthrough.py
+sample_c13_resource_lines.txt
+```
+
+### 15.1 阶段地图
+
+本阶段按以下主线推进：
+
+```tex
+1. while 条件每轮重新求值。
+2. 循环体如何改变退出条件，避免无限循环。
+3. while True、哨兵值、break 和 continue。
+4. 循环 else 的真实语义：没有 break 才执行。
+5. for 遍历字符串、列表、字典、集合、文件和 zip 等对象。
+6. 循环变量绑定：重新绑定名字，不复制元素对象。
+7. range()、enumerate()、zip() 和 zip(strict=True) 的选型。
+8. 文件对象、zip 对象和迭代器式对象的一次性消费。
+9. 遍历中修改列表、字典、集合的风险。
+10. 用快照、收集后处理、构造新容器来安全处理数据。
+11. 嵌套循环和占位符检查。
+12. 本地化资源扫描 report：stats、issues、fatal_error、valid_records。
+```
+
+阶段验收观察点：
+
+```tex
+1. 能预测循环次数、输出顺序和最终变量绑定。
+2. 能说明 while 条件每轮检查的是当前对象状态。
+3. 能判断 break / continue / loop else 的路径差异。
+4. 能区分循环变量重新绑定和可变元素原地修改。
+5. 能识别边遍历边修改容器的风险，并给出安全替代写法。
+6. 能把循环控制流组织成结构化扫描函数，而不是只用 print 输出过程。
+```
+
+### 15.2 `while`：条件每轮重新求值，不是只检查一次
+
+`while condition:` 的核心不是“进入一次后自动循环”，而是：每一轮开始前都重新求值 `condition`，并对结果做真值测试。
+
+```python
+queue = ["scan", "normalize", "report"]
+
+while queue:
+    command = queue.pop(0)
+    print(command, queue)
+```
+
+这里 `while queue:` 每轮检查的是当前 `queue` 列表对象的真值：非空为真，空列表为假。`queue.pop(0)` 会原地修改列表，影响下一轮条件是否仍然为真。
+
+常见误区：
+
+```tex
+误区1：while 条件只在第一次进入循环前检查一次。
+修正：while 条件每轮都会重新求值。
+
+误区2：循环次数由某个看起来像计数器的变量天然决定。
+修正：循环次数由循环条件和循环体中的状态变化共同决定。
+
+误区3：while queue: 绑定的是初始列表长度。
+修正：它每轮看的是当前 queue 是否为空；pop、append、clear 都会影响后续判断。
+```
+
+工程规则：
+
+```tex
+1. while 适合动态状态、队列、轮询、哨兵输入、重试逻辑。
+2. 写 while 时必须能指出哪个状态变化保证退出。
+3. 如果 continue 会跳过状态推进语句，优先重构，避免无限循环。
+4. 对本地化扫描队列，while queue: 表示“还有任务未处理”，不是固定轮数循环。
+```
+
+### 15.3 `while True`、哨兵值、`break` 和 `continue`
+
+`while True` 常用于“先读一条，再根据内容决定是否停止”的哨兵模式：
+
+```python
+commands = ["scan", "", "normalize", "QUIT", "report"]
+index = 0
+processed = []
+empty = 0
+
+while index < len(commands):
+    command = commands[index]
+    index += 1
+
+    if command == "QUIT":
+        break
+
+    if not command:
+        empty += 1
+        continue
+
+    processed.append(command)
+```
+
+控制流含义：
+
+```tex
+break：
+    立即结束当前这一层循环。
+    循环后面的语句继续执行。
+
+continue：
+    只结束当前这一轮循环体的剩余部分。
+    while 中回到条件重新判断；for 中进入下一次取值。
+
+普通执行到底：
+    本轮循环体剩余语句全部执行，然后自然进入下一轮。
+```
+
+常见坑：
+
+```tex
+1. 把 continue 误解成结束整个循环。
+2. 在 continue 前忘记推进 index，导致 while 无限循环。
+3. 忘记 break 不会撤销本轮已经发生的副作用。
+4. 统计字段放在不同位置，会改变统计口径。
+```
+
+统计口径规则：
+
+```tex
+统计读取过多少条：
+    计数放在读出 command 后、任何过滤和 break 之前。
+
+统计非空普通命令：
+    计数放在空字符串过滤和 QUIT 哨兵判断之后。
+
+统计成功处理过多少条：
+    计数放在真正处理成功之后。
+```
+
+测验暴露的精修点：
+
+```tex
+不能只说“total 的含义取决于位置”。
+更好的说法是：
+    移到 if not command: ... continue 之后，并且仍在 QUIT 分支之后，
+    本例 total 会只统计 scan 和 normalize，即 2。
+```
+
+### 15.4 循环 `else`：没有 `break` 才执行
+
+循环 `else` 不是 `if` 的 `else`，也不是“条件为假就执行”的普通反面分支。它的语义是：循环没有被 `break` 提前终止时执行。
+
+```python
+target = "menu.quit"
+records = ["menu.start", "menu.options"]
+
+for key in records:
+    if key == target:
+        print("found", key)
+        break
+else:
+    print("not found")
+```
+
+这里没有找到目标，循环自然耗尽，因此执行 `else`。
+
+要点：
+
+```tex
+1. for 正常耗尽 -> else 执行。
+2. while 条件变假正常结束 -> else 执行。
+3. break 提前终止 -> else 不执行。
+4. continue 不会阻止 else；它只跳过当前这一轮剩余语句。
+5. 空循环如果没有 break，也会执行 else。
+```
+
+工程应用：
+
+```tex
+搜索一个目标：
+    找到后 break；else 表示没找到。
+
+扫描所有记录：
+    没有 fatal break 时，else 可表示扫描完整完成。
+
+结构化报告：
+    completed 表示是否完整扫描，不等于 issues 是否为空。
+```
+
+你在阶段中形成的关键判断：
+
+```tex
+“找到目标”这类语义不应该无条件放在循环之后。
+更稳妥的写法：
+    找到时在 break 前处理，或者保存 found_record，再在循环后统一处理。
+    未找到时用 loop else 明确表达。
+```
+
+### 15.5 `for`：遍历元素对象，循环变量每轮重新绑定
+
+`for item in items:` 的本质不是“复制元素给 item”，而是每轮从可迭代对象中取得下一个元素对象，并把循环变量 `item` 绑定到它。
+
+```python
+records = [
+    {"key": "menu.start", "target": "Start"},
+    {"key": "menu.exit", "target": ""},
+]
+
+for record in records:
+    if record["target"]:
+        record["target"] = record["target"].upper()
+```
+
+如果元素是可变对象，`record` 和列表里的元素引用同一个字典。通过 `record["target"] = ...` 修改的是那个字典对象本身，`records` 中也会体现变化。
+
+边界规则：
+
+```tex
+record = {...}：
+    重新绑定循环变量，不会替换 records 中的元素。
+
+record["target"] = "START"：
+    通过循环变量修改当前字典对象，会影响 records 中对应元素。
+
+valid.append(record)：
+    追加当前对象引用，不是复制字典。
+
+valid.append({"key": record["key"], "target": target})：
+    构造新的外层字典，避免共享原始 record。
+```
+
+常见误区：
+
+```tex
+误区1：for item in items 会复制元素对象。
+修正：循环变量绑定到元素对象，是否共享要看元素本身是不是同一个可变对象。
+
+误区2：循环结束后的 record 一定代表“找到的目标”。
+修正：它通常只是最后一次绑定；循环零次执行时甚至可能没有新绑定。
+
+误区3：append(record) 得到的是一份独立报告。
+修正：append 的是对象引用；需要独立报告时构造新 dict。
+```
+
+工程习惯：
+
+```tex
+1. 审计工具中优先构造干净 report 条目，不直接暴露输入 record。
+2. 如果要保留原始行号，把 line_no 放入 valid_records 或 issues。
+3. 如果报告条目包含嵌套可变对象，外层新字典不等于深拷贝；要按字段语义显式复制。
+```
+
+### 15.6 `range()`、`enumerate()`、`zip()`：按意图选择循环工具
+
+三者不是“循环高级写法”，而是表达不同意图的工具。
+
+```tex
+直接遍历元素：
+    for record in records:
+    适合只关心元素对象。
+
+range(...):
+    for index in range(len(records)):
+    适合确实需要数字序列或手工下标控制。
+
+enumerate(...):
+    for line_no, line in enumerate(lines, start=1):
+    适合同时需要元素和位置。
+
+zip(...):
+    for key, target in zip(keys, targets):
+    适合并行遍历多个输入。
+
+zip(..., strict=True):
+    适合要求多个输入强对齐，长度不一致应视为错误。
+```
+
+本地化场景中的典型选择：
+
+```python
+for line_no, raw_line in enumerate(lines, start=1):
+    line = raw_line.rstrip("\n")
+    key, target = line.split("=", 1)
+```
+
+为什么用 `enumerate(start=1)`：
+
+```tex
+1. 报告给人看时通常从第 1 行开始计数。
+2. issues 中保存 line_no，能定位原始文件位置。
+3. 比手工维护 index 更少出错。
+```
+
+为什么用 `split("=", 1)`：
+
+```tex
+只按第一个等号拆分。
+如果翻译文本中也出现 =，不会把 target 拆碎。
+```
+
+为什么用 `rstrip("\n")` 而不是无脑 `strip()`：
+
+```tex
+rstrip("\n")：
+    去掉行尾换行符，保留 key 或 target 中真实存在的空格。
+
+strip()：
+    去掉两端所有空白，可能掩盖本应审计的空格问题。
+```
+
+`zip()` 的关键坑：
+
+```tex
+普通 zip：
+    在最短输入耗尽时停止，较长输入尾部被静默丢弃。
+
+zip(strict=True)：
+    长度不一致时抛出 ValueError，能暴露对齐错误。
+
+但 strict=True 不是事务机制：
+    异常发生前，循环体里已经执行过的 append、print、写文件等副作用不会自动回滚。
+```
+
+工程规则：
+
+```tex
+1. 只要元素：直接 for item in items。
+2. 要行号或位置：enumerate()。
+3. 要并行匹配：zip()。
+4. 资源列必须一一对应：zip(strict=True)。
+5. 不要滥用 range(len(seq))；除非确实需要下标或要修改槽位。
+```
+
+### 15.7 文件对象、流式迭代和 `a+` 模式边界
+
+文件对象可以被 `for line in file:` 遍历，它像流一样维护当前位置。
+
+```python
+from io import StringIO
+
+stream = StringIO("a=1\nb=2\n")
+
+first = [line.rstrip("\n") for line in stream]
+second = [line.rstrip("\n") for line in stream]
+stream.seek(0)
+third = [line.rstrip("\n") for line in stream]
+```
+
+结果语义：
+
+```tex
+first：
+    读到 a=1 和 b=2。
+
+second：
+    空列表，因为第一次遍历后位置已经在 EOF。
+
+third：
+    seek(0) 回到开头后，重新读到内容。
+```
+
+文件对象和 `zip` 类似，常见边界是“一次性消费”：同一个对象遍历一次后，再遍历可能没有内容。要重复使用，需要重新打开文件、`seek(0)`，或把内容显式保存成列表。
+
+不建议边读边写同一个文件：
+
+```tex
+1. 读写共享文件位置，容易漏读或重复读。
+2. 缓冲区刷新时机可能让刚写入内容不可见。
+3. 追加写可能导致文件不断增长，扫描边界不清楚。
+4. 出错时很难判断哪些内容已经读过、哪些内容已经写入。
+```
+
+`a+` 模式的合理用途：
+
+```tex
+`a+` 表示打开文件用于读写，并且写入通常追加到文件末尾。
+它适合“打开一个日志或记录文件，必要时读取已有内容，然后追加新记录”。
+
+典型场景：
+    读取已有审计日志末尾状态；
+    追加本次运行摘要；
+    保存简单的本地追踪记录。
+
+注意：
+    打开后文件位置通常在末尾。
+    如果要读已有内容，通常需要 seek(0)。
+    即使能读写同一文件，也不等于适合在同一个迭代循环里边读边写。
+```
+
+工程习惯：
+
+```tex
+1. 审计工具优先分阶段：先读输入 -> 生成 report -> 再写输出。
+2. 输入文件和输出报告文件尽量分开。
+3. 对同一个文件既读又写时，显式管理 seek、flush、关闭和失败路径。
+4. 需要稳定可复盘时，把原始输入、结构化 report、最终输出分层保存。
+```
+
+### 15.8 遍历时修改容器：列表、字典、集合的风险不同
+
+边遍历边修改容器，是 C13 最重要的工程坑之一。
+
+列表的风险：
+
+```python
+items = ["", "scan", "", "report"]
+
+for item in items:
+    if not item:
+        items.remove(item)
+```
+
+列表迭代通常按位置推进；删除当前或前面的元素会让后续元素左移，容易跳过元素。它未必立刻报错，但逻辑可能已经错了。
+
+字典和集合的风险：
+
+```python
+records = {"menu.start": "开始", "menu.exit": ""}
+
+for key, target in records.items():
+    if not target:
+        del records[key]
+```
+
+遍历字典或集合时改变大小，通常会触发运行期错误，例如：
+
+```tex
+RuntimeError: dictionary changed size during iteration
+RuntimeError: set changed size during iteration
+```
+
+但要注意：
+
+```tex
+运行期错误不等于事务回滚。
+异常发生前，已经删除或添加的内容可能已经改变了原对象。
+```
+
+测验精修点：
+
+```tex
+E2 中如果捕获异常后查看 records，可能看到：
+    "menu.exit" 已经被删除，
+    "menu.debug" 还留着。
+
+所以“会报错”还不够，工程上还要问：
+    报错前对象是否已经部分改变？
+```
+
+安全替代写法：
+
+```tex
+快照遍历：
+    for key in list(records):
+        ...
+
+先收集后处理：
+    keys_to_delete = []
+    for key, target in records.items():
+        if not target:
+            keys_to_delete.append(key)
+    for key in keys_to_delete:
+        del records[key]
+
+构造新容器：
+    cleaned = {}
+    for key, target in records.items():
+        if target:
+            cleaned[key] = target
+```
+
+工程选型：
+
+```tex
+需要保留原输入用于审计：
+    构造新容器。
+
+确实要修改原对象：
+    先收集要改的 key 或 index，再统一处理。
+
+只是遍历一个静态视图：
+    可以使用 list(records.items()) 快照。
+```
+
+### 15.9 字典和集合：顺序、哈希、成员测试和稳定报告
+
+字典和集合都基于哈希结构支持高效成员查找，但它们的业务语义不同。
+
+字典：
+
+```tex
+dict 保存 key -> value 映射。
+现代 Python 字典保留插入顺序。
+查找某个 key 平均很快。
+```
+
+集合：
+
+```tex
+set 保存唯一元素。
+它不仅用于去重，还用于快速成员测试和集合运算：差集、交集、并集、对称差集。
+普通 set 不承诺业务顺序。
+```
+
+你在阶段中追问过的问题，可以压缩为这三条：
+
+```tex
+1. 字典如何同时保留插入顺序和高效 key 查找？
+   现代 CPython 的字典实现把哈希表查找和紧凑保存条目的布局结合起来；语言层面从 Python 3.7 起承诺 dict 保留插入顺序。
+
+2. 集合为什么也是哈希结构？只是为了去重吗？
+   不是。去重是结果之一；更重要的是快速成员测试和集合运算。
+
+3. dict[key] 和 key in dict / item in set 是否是同类机制？
+   它们都依赖对象的哈希值和相等性协议定位候选元素；目的不同：dict[key] 是取值，key in dict / item in set 是成员测试。
+```
+
+成员测试边界：
+
+```python
+record = {"key": "menu.start", "target": "开始"}
+known_keys = {"menu.start", "menu.exit"}
+
+"key" in record              # 检查字典 key
+"menu.start" in record       # 仍然检查 key，不检查 value
+"menu.start" in known_keys   # 检查集合元素
+record["key"] in known_keys  # 先取 value，再做集合成员测试
+```
+
+稳定报告规则：
+
+```tex
+带 line_no 的问题报告：
+    优先保留原始文件顺序。
+
+纯 key 集合报告：
+    优先 sorted(...)，保证稳定、可读、可复现。
+
+dict 扫描报告：
+    可利用插入顺序表达资源声明顺序。
+
+set 直接打印：
+    不适合作为稳定报告格式。
+```
+
+### 15.10 本地化扫描函数：把循环组织成结构化 report
+
+本阶段最终把循环知识落在资源扫描函数上。推荐报告结构：
+
+```python
+report = {
+    "completed": True,
+    "stats": {
+        "total": 0,
+        "disabled": 0,
+        "enabled": 0,
+        "valid": 0,
+    },
+    "issues": [],
+    "fatal_error": None,
+    "valid_records": [],
+}
+```
+
+典型控制流：
+
+```tex
+for line_no, record in enumerate(records, start=1):
+    total += 1
+
+    缺 key：
+        结构性问题，设置 fatal_error，completed = False，break。
+
+    enabled 为 False：
+        计入 disabled，continue。
+
+    target 为空：
+        内容质量问题，加入 issues，continue。
+
+    占位符缺失：
+        内容一致性问题，加入 issues，continue。
+
+    通过检查：
+        valid += 1，构造新字典加入 valid_records。
+```
+
+你在阶段中总结得很准确的两个判断：
+
+```tex
+缺 key：
+    结构性问题，后续扫描前提被破坏；使用 fatal_error + break。
+
+译文为空或占位符缺失：
+    内容质量问题，不破坏继续扫描其它资源的能力；使用 issues.append(...) + continue。
+```
+
+`break` 后统一 `return report` 的价值：
+
+```tex
+break：
+    停止扫描循环。
+
+循环后的统一收尾：
+    补齐 issue_count、summary、completed 等结构字段。
+
+统一 return：
+    让调用者拿到稳定结构。
+```
+
+循环中直接 `return report` 也不是绝对错误，但更适合短小搜索函数或无需统一收尾的函数。对审计报告函数，优先使用 `break` 后统一收尾。
+
+工程规则：
+
+```tex
+1. 核心扫描函数不要直接 print；返回 report。
+2. 人读输出、JSON 导出、日志写入放在外层展示层。
+3. 用 continue 降低嵌套，但不要让 continue 跳过必要统计。
+4. 用 break 表达 fatal 停止扫描，再统一整理 report。
+5. valid_records 构造新字典，避免共享原始 record。
+6. line_no 是定位信息，普通 issue、fatal_error、必要时 valid_records 都可以保留。
+```
+
+### 15.11 本阶段你的理解轨迹、问题与修正规则
+
+1. 关于 `while queue:` 的循环次数：
+
+   ```tex
+   你的判断：
+       循环次数由 queue 指向的列表在每轮中的当前长度和变化决定，
+       不是由 round_no 这类计数变量决定。
+
+   结论：
+       正确。
+       round_no 只是统计轮数；真正驱动循环继续的是 queue 的真值。
+   ```
+
+2. 关于 `QUIT` 之后的命令：
+
+   ```tex
+   你的判断：
+       读取到 QUIT 后，index 已经前进，但 break 会终止循环，
+       所以 QUIT 后面的 report 不会处理。
+
+   结论：
+       正确。
+       这说明你已经能把“本轮已发生的副作用”和“后续控制流停止”分开。
+   ```
+
+3. 关于 `continue` 的路径：
+
+   ```tex
+   你的判断：
+       disabled 记录命中 continue 后，不会继续检查 target。
+
+   结论：
+       正确。
+       continue 是本轮剩余语句的跳过，不是整个循环的终止。
+   ```
+
+4. 关于“找到目标”的语句位置：
+
+   ```tex
+   你的理解：
+       “找到目标”这类语义不应无条件写在循环之后。
+       它应放在 break 前，或结合 loop else 表达“未找到”。
+
+   结论：
+       正确。
+       循环之后只能说明循环结束，不能自动说明找到目标。
+   ```
+
+5. 关于 fatal 与 ordinary issue：
+
+   ```tex
+   你的理解：
+       缺 key 是结构性问题，使用 fatal_error + break。
+       译文为空是内容质量问题，使用 issues.append(...) + continue。
+
+   结论：
+       正确。
+       这正是扫描工具中“能否继续扫描”的关键分界。
+   ```
+
+6. 关于 break 后统一 return：
+
+   ```tex
+   你的理解：
+       break 只结束循环，函数仍可执行统一收尾逻辑；
+       循环中直接 return 会绕过后续收尾，可能让返回结构不稳定。
+
+   结论：
+       正确。
+       对结构化报告函数尤其重要。
+   ```
+
+7. 关于可变序列和哈希结构在遍历中修改的差异：
+
+   ```tex
+   你的追问：
+       为什么列表和 dict/set 自身长度变化时表现差异明显？
+
+   修正模型：
+       列表迭代主要面对索引位置变化，可能跳过或重复处理元素；
+       dict/set 迭代依赖哈希表结构，改变大小会破坏迭代器对结构版本的假设，通常直接 RuntimeError。
+
+   工程结论：
+       不要在遍历原容器时改变其结构；使用快照、收集后处理或构造新容器。
+   ```
+
+8. 关于文件对象边读边写和 `a+`：
+
+   ```tex
+   你的追问：
+       如果文件对象被迭代时边读边写会怎样？既然不建议，a+ 有什么用？
+
+   修正模型：
+       文件迭代依赖当前位置和缓冲；边读边写同一个文件会让 EOF、flush、追加位置和可见性混在一起。
+       a+ 的价值是读写同一个文件句柄，尤其适合读已有内容后追加新记录；
+       但它不意味着推荐在同一个 for line in file 循环里边读边写。
+   ```
+
+9. 关于字典、集合和哈希：
+
+   ```tex
+   你的追问：
+       dict 如何保序又高效查找？set 为什么基于哈希？dict[key] 到底发生什么？
+
+   修正模型：
+       dict 的语言语义承诺插入顺序，同时底层利用哈希结构做 key 查找；
+       set 的价值不只去重，还包括快速成员测试和集合运算；
+       dict key 查找与 set 成员测试都依赖 hash 与 equality 的协作。
+   ```
+
+10. 关于报告顺序：
+
+    ```tex
+    你的理解：
+        带行号的问题报告，优先保留原始文件顺序；
+        纯 key 集合报告，优先 sorted() 保证稳定、可读、可复现。
+
+    结论：
+        正确。
+        这是本地化审计报告中非常重要的可复盘规则。
+    ```
+
+### 15.11.1 收束追问补充：占位语句、哨兵循环和旧式 `map(None)`
+
+本节记录 C13 阶段笔记完成后继续追问的两个专题。它们都属于 C13 的收束补充：一个补上“语句 / 表达式 / 值”的边界，另一个补上旧书写法如何迁移到现代 Python 的迭代工具。
+
+#### 15.11.1.1 `pass`、`...` 和 `None`：不要把三者混成“空”
+
+三者看起来都可能和“什么也不做”有关，但层级完全不同：
+
+```tex
+pass：
+    语句。
+    用在语法要求必须有语句的位置，明确表示这里什么也不做。
+
+...：
+    表达式。
+    求值得到内置单例对象 Ellipsis。
+
+None：
+    值。
+    表示没有值、缺失值、无返回结果或不适用。
+```
+
+典型用法：
+
+```python
+def placeholder_function():
+    pass
+
+
+class FutureProtocol:
+    ...
+
+
+def maybe_get_target(record):
+    if "target" not in record:
+        return None
+    return record["target"]
+```
+
+关键边界：
+
+```tex
+pass 不产生值，也不改变控制流。
+    在循环中命中 pass 后，本轮后续语句仍会继续执行。
+    想跳过本轮剩余语句，应使用 continue。
+
+... 能放进函数体，是因为表达式语句本身合法。
+    def f(): ... 没有显式 return，函数调用结果仍然是 None。
+    ... is Ellipsis 为 True，bool(...) 也为 True。
+
+None 是业务语义上的“没有值”。
+    判断 None 应使用 is None / is not None。
+    如果 None 可能是合法业务值，就不要把 None 当作哨兵。
+```
+
+工程习惯：
+
+```tex
+空分支、空循环体、空函数体：
+    用 pass。
+
+类型桩、协议、重载声明、教学骨架：
+    可以用 ...。
+
+运行时不应被调用的未实现逻辑：
+    优先 raise NotImplementedError。
+
+表示缺失、未找到、没有返回结果：
+    用 None，并用 is None 判断。
+
+None 也是合法数据时：
+    使用唯一哨兵，例如 MISSING = object()。
+```
+
+#### 15.11.1.2 质数示例中的循环 `else`
+
+书中质数片段适合展示循环 `else`：找到因子时 `break`，没有 `break` 才进入 `else`。但作为工程函数，它不应只依赖注释中的 `y > 1` 前提，也不应只用 `print` 表达结果。
+
+更适合当前阶段的写法是保留 `while ... else`，但把结果返回为结构化数据：
+
+```python
+def prime_report(n):
+    report = {
+        "input": n,
+        "is_prime": False,
+        "factor": None,
+        "reason": "",
+        "checked_divisors": [],
+    }
+
+    if isinstance(n, bool) or not isinstance(n, int):
+        report["reason"] = "not an integer"
+        return report
+
+    if n < 2:
+        report["reason"] = "less than 2"
+        return report
+
+    if n == 2:
+        report["is_prime"] = True
+        report["reason"] = "2 is the smallest prime"
+        return report
+
+    if n % 2 == 0:
+        report["factor"] = 2
+        report["reason"] = "even number greater than 2"
+        return report
+
+    divisor = 3
+    while divisor * divisor <= n:
+        report["checked_divisors"].append(divisor)
+
+        if n % divisor == 0:
+            report["factor"] = divisor
+            report["reason"] = "has a factor"
+            break
+
+        divisor += 2
+    else:
+        report["is_prime"] = True
+        report["reason"] = "no factor found up to square root"
+
+    return report
+
+
+def is_prime(n):
+    return prime_report(n)["is_prime"]
+```
+
+这段函数的重点不是数学技巧本身，而是 C13 控制流边界：
+
+```tex
+1. bool 是 int 的子类，工程上通常要显式排除 True / False。
+2. n < 2 不是质数，不能靠注释保证调用方永远传入 y > 1。
+3. 检查到平方根即可，用 divisor * divisor <= n 避免浮点 sqrt 边界。
+4. while 的 else 表示“没有 break”，不是“循环至少执行过一次”。
+5. n = 3、5、7 时循环体一次也不执行，但没有 break，所以 else 仍会执行。
+6. 核心函数返回数据；print 属于外层展示边界。
+```
+
+#### 15.11.1.3 C 式“取值并判断”循环在 Python 中的现代写法
+
+C 中常见模式：
+
+```c
+while ((x = next()) != NULL) {
+    process(x);
+}
+```
+
+在 Python 中，普通赋值语句 `x = ...` 不能出现在表达式位置。但现代 Python 有赋值表达式 `:=`，并且很多场景更应该直接使用 `for` 或迭代工具。
+
+书中给出的三种旧式等价写法里，更推荐第一种的显式哨兵版本：
+
+```python
+while True:
+    x = get_next()
+    if x is None:
+        break
+    process(x)
+```
+
+不推荐把判断写成 `if not x: break`，除非接口契约明确规定任何假值都代表结束。否则 `0`、`""`、`[]`、`False` 这些合法数据都会被误判为结束。
+
+三种写法的取舍：
+
+```tex
+while True + break：
+    取值、判断停止、处理数据的顺序最清楚。
+    推荐使用显式哨兵判断，例如 is None 或 is MISSING。
+
+x = True; while x: ...：
+    不推荐。
+    初始 True 是人为占位值，同一个条件常被测两次，可读性较差。
+
+预读一次，再在循环尾部再读一次：
+    简单场景可用，但取值语句重复。
+    如果循环体中出现 continue，尾部取值可能被跳过，容易造成死循环或重复处理旧值。
+```
+
+现代 Python 的优先级通常是：
+
+```tex
+1. 数据源本身可迭代：
+       for x in obj:
+           process(x)
+
+2. 重复调用函数直到返回哨兵：
+       for line in iter(file.readline, ""):
+           process(line)
+
+3. 需要在 while 条件里取值并判断：
+       while (x := get_next()) is not None:
+           process(x)
+
+4. None 可能是合法业务值：
+       MISSING = object()
+       while (x := next(iterator, MISSING)) is not MISSING:
+           process(x)
+
+5. 普通迭代器耗尽：
+       优先 for；不要手动把 StopIteration 当普通业务分支处理。
+```
+
+#### 15.11.1.4 旧式 `map(None, ...)` 与现代 `zip` / `zip_longest`
+
+旧版 Python 曾支持 `map(None, ...)` 的退化形式。Python 3 不再支持：`None` 会被当作函数调用，消费结果时触发 `TypeError`。
+
+```python
+list(map(None, [1, 2]))
+# TypeError: 'NoneType' object is not callable
+```
+
+现代替代规则：
+
+```python
+from itertools import zip_longest
+
+list(zip([1, 2], ["a"]))
+# [(1, "a")]
+
+list(zip_longest([1, 2], ["a"], fillvalue=None))
+# [(1, "a"), (2, None)]
+```
+
+如果要模拟旧式行为，可以写成：
+
+```python
+from itertools import zip_longest
+
+
+def legacy_map_none(*iterables):
+    if not iterables:
+        raise TypeError("legacy_map_none() requires at least one iterable")
+
+    if len(iterables) == 1:
+        return list(iterables[0])
+
+    return list(zip_longest(*iterables, fillvalue=None))
+```
+
+更现代的工程表达通常不复刻旧接口，而是直接写出真实意图：
+
+```tex
+zip(a, b)：
+    截断到最短输入。
+
+zip(a, b, strict=True)：
+    要求长度一致，不一致就抛出 ValueError。
+
+zip_longest(a, b, fillvalue=None)：
+    补齐到最长输入，缺项用 None 表示。
+
+list(a)：
+    单个 iterable 的急切列表化。
+```
+
+本地化资源扫描中的选型：
+
+```tex
+key 列表和 target 列表必须一一对应：
+    使用 zip(..., strict=True)。
+
+允许缺项，但要把缺项报告出来：
+    使用 zip_longest(..., fillvalue=MISSING)，其中 MISSING = object()。
+
+只是为了复刻旧书语法：
+    不推荐。现代代码应优先表达截断、强对齐或补齐这三种明确语义。
+```
+
+### 15.12 阶段测验暴露的薄弱处与修正规则
+
+C13 阶段测验建议得分为 `99 / 100`，通过本阶段。主干没有概念性错误；扣分集中在两个工程精度点。
+
+```tex
+精修点1：统计字段的位置和口径
+
+原答卷倾向：
+    total 的含义取决于 report["total"] += 1 放在哪里。
+
+修正：
+    方向正确，但阶段末要进一步给出具体值和口径。
+    本题中如果 total += 1 放到空字符串过滤之后，并且仍在 QUIT 分支之后，
+    total 会只统计 scan 和 normalize，即 2。
+
+长期规则：
+    total、enabled、valid、processed 这类名字要和代码位置一致。
+```
+
+```tex
+精修点2：运行期错误不等于事务回滚
+
+原答卷倾向：
+    遍历 dict 时删除 key 会 RuntimeError，print 不会执行。
+
+修正：
+    正确，但还要补充：异常发生前的删除可能已经生效。
+    本题中 menu.exit 可能已经被删除，menu.debug 仍留在字典中。
+
+长期规则：
+    看到“异常”时继续问：异常前哪些副作用已经发生？是否需要回滚或避免半成品状态？
+```
+
+本次测验确认的强项：
+
+```tex
+1. 能稳定预测 while 动态队列、break、continue、loop else。
+2. 能准确分析循环后变量、队列、seen 集合、processed 列表和 skipped 计数。
+3. 能解释 enumerate 行号、rstrip("\n")、split("=", 1) 的工程意义。
+4. 能说明 zip(strict=True) 暴露错误但不回滚前面副作用。
+5. 能解释 file / StringIO 的位置推进和一次性消费。
+6. 能识别循环变量绑定、原地修改、append 原对象引用和构造新容器的差异。
+7. 能说明 missing 列表应放在外层循环内部，避免跨记录污染。
+8. 能分析 dict/set 顺序、成员测试、hash/equality 协作和稳定报告排序。
+9. 能设计结构稳定、无核心 print 副作用的本地化资源扫描函数。
+```
+
+### 15.13 工程应知应会清单
+
+```tex
+1. while 条件每轮重新求值。
+2. while 循环必须能指出退出条件如何变化。
+3. while queue: 检查当前 queue 是否非空，不绑定初始长度。
+4. while True 通常要配合哨兵、break 或明确退出条件。
+5. break 结束当前这一层循环。
+6. continue 只跳过当前这一轮剩余语句。
+7. break 不撤销本轮已经发生的副作用。
+8. continue 前后统计字段的位置决定统计口径。
+9. 循环 else 只在没有 break 时执行。
+10. continue 不会阻止循环 else。
+11. 搜索目标时，found 语义应由 break/else、found_record 或 return 明确表达。
+12. for 循环变量每轮重新绑定到元素对象，不复制元素。
+13. 重新绑定循环变量不会替换容器槽位。
+14. 通过循环变量原地修改可变元素，会影响容器中的同一对象。
+15. append(record) 保存对象引用，不是复制 record。
+16. 生成报告时优先构造新字典，避免共享原始输入对象。
+17. 新外层字典不等于深拷贝嵌套可变对象。
+18. 只需要元素时直接遍历。
+19. 需要行号或位置时使用 enumerate()。
+20. 需要并行遍历时使用 zip()。
+21. 要求强对齐时使用 zip(strict=True)。
+22. 普通 zip 默认静默截断较长输入。
+23. zip(strict=True) 不是事务机制。
+24. 文件对象遍历会推进文件位置。
+25. 文件对象、zip 对象、迭代器式对象通常会被一次性消费。
+26. 重读同一文件对象通常需要 seek(0) 或重新打开。
+27. 不建议在同一个文件迭代循环里边读边写。
+28. a+ 适合读已有内容后追加新记录，但仍要显式管理文件位置。
+29. 遍历列表时删除或插入元素可能跳过或重复处理。
+30. 遍历 dict/set 时改变大小通常会 RuntimeError。
+31. RuntimeError 不等于自动回滚；异常前可能已有部分副作用。
+32. 安全修改容器：快照、先收集后处理、构造新容器。
+33. dict 默认遍历 key。
+34. dict 保留插入顺序，适合保留资源声明顺序。
+35. set 不适合表达业务顺序。
+36. 纯 key 集合报告优先 sorted(...)。
+37. 带 line_no 的问题报告优先保留原始顺序。
+38. key in dict 是检查 key，不是检查 value。
+39. dict[key] 是取值；key in dict 是存在性测试。
+40. set 的价值包括去重、快速成员测试和集合运算。
+41. 哈希结构查找依赖 hash 与 equality 协作。
+42. 扫描函数核心逻辑返回结构化 report，不直接 print。
+43. 人读输出、日志、JSON/CSV 导出属于外层展示或持久化边界。
+44. fatal error 用 completed=False + fatal_error + break。
+45. ordinary issue 用 issues.append(...) + continue。
+46. disabled 记录先计入 disabled，再 continue 跳过质量检查。
+47. valid_records 应保存干净输出字段，必要时保留 line_no。
+48. 统计字段命名要表达口径：读取过、启用过、有效过、处理过。
+49. 嵌套循环中内层 break 只结束内层循环。
+50. 缺 key、空 target、占位符缺失应区分结构问题和内容问题。
+51. pass 是语句；... 是表达式，值是 Ellipsis；None 是普通对象和值。
+52. pass 不会跳过本轮后续语句；需要跳过本轮应使用 continue。
+53. def f(): ... 的函数调用结果仍然是 None，除非显式 return。
+54. None 判断用 is None；None 可能是合法业务值时使用自定义哨兵。
+55. 循环 else 的“没有 break”语义同样适用于循环体一次也没执行的情况。
+56. C 式取值并判断循环在现代 Python 中优先考虑 for、iter(callable, sentinel) 或 :=。
+57. 避免用 if not x 作为结束判断，除非所有假值都确实代表结束。
+58. 预读一次再在循环尾读下一项的写法，要警惕 continue 跳过尾部取值。
+59. Python 3 不支持 map(None, ...)，应根据意图选择 zip、zip(strict=True) 或 zip_longest。
+60. zip_longest 补齐缺项时，若 None 是合法业务值，应使用 MISSING = object()。
+```
+
+### 15.14 阶段精髓小结
+
+```tex
+1. C13 的核心不是写 while 和 for，而是解释重复执行如何推进状态。
+2. while 每轮重新求值条件；循环体改变的状态决定后续轮次。
+3. for 从可迭代对象中取元素对象，并把循环变量绑定到它。
+4. 循环变量绑定不是复制；可变元素原地修改会影响原容器。
+5. break 终止当前循环；continue 跳过当前这一轮剩余语句。
+6. 循环 else 的语义是“没有 break”。
+7. 循环后的变量不自动代表“找到的目标”。
+8. range、enumerate、zip 是表达循环意图的工具，不是越复杂越好。
+9. zip 默认静默截断；strict=True 能暴露长度不一致。
+10. 文件对象和迭代器式对象常常只能被消费一次。
+11. 遍历中修改容器是高风险操作：列表可能漏检，dict/set 可能报错。
+12. 报错之前的副作用可能已经发生，异常不是回滚机制。
+13. 安全处理数据优先用快照、收集后处理或构造新容器。
+14. dict 保序和 set 无业务顺序要分开看。
+15. 哈希结构不只用于去重，也用于快速成员测试和集合运算。
+16. 本地化扫描中，缺 key 是结构性 fatal；空译文和占位符缺失是普通 issue。
+17. report 的 completed、stats、issues、fatal_error、valid_records 要表达不同层次的结果。
+18. 核心扫描函数返回结构化数据；print、日志、文件写入放到外层。
+19. 统计字段的位置就是统计口径，必须和字段命名一致。
+20. C13 的价值，是把 C12 的“是否进入某个代码块”推进到“多轮执行如何改变对象、控制流和报告结构”。
+```
+
+进入 `C14_Iterations_and_Comprehensions` 后，要把 C13 已经压稳的显式循环模型继续推进到迭代协议、迭代器对象、推导式、生成器表达式、惰性求值和急切求值边界。下一阶段的重点不是把所有循环写短，而是判断哪些循环可以清晰地改写为推导式，哪些循环因为统计、错误处理、副作用或结构化报告需要继续保留显式写法。

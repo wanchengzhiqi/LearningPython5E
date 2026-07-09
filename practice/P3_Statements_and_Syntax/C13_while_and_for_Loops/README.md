@@ -57,6 +57,18 @@ python practice\P3_Statements_and_Syntax\C13_while_and_for_Loops\08_prompt_manag
 7. `07_localization_resource_scan_loop_pipeline.py`：本地化资源扫描、跳过、收集、阻断和结构化报告。
 8. `08_prompt_manager_loop_reading_walkthrough.py`：结合 `prompt_template_manager` 的真实循环阅读实验。
 
+## 阶段收束成果
+
+```text
+stage_quiz_while_and_for_loops.md
+```
+
+阶段测验已完成逐题审批，建议得分为 `99 / 100`。后续 C13 复盘优先阅读：
+
+1. 本目录实验脚本；
+2. `stage_quiz_while_and_for_loops.md` 末尾的 Codex 批改记录；
+3. `notes/P3_Statements_and_Syntax.md` 中的 C13 阶段笔记和收束追问补充。
+
 ## 每次预测的固定问题
 
 1. `while` 条件每轮是否重新求值？循环体改变了哪个退出状态？

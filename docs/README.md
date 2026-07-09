@@ -17,6 +17,10 @@
 - [`C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md`](C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md)：
   进入 `P3_Statements_and_Syntax / C13_while_and_for_Loops` 的新会话启动模板。
   它基于 C12 阶段测验、阶段笔记和最新学习画像生成，只正式推进 C13。
+- [`C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md`](C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md)：
+  进入 `P3_Statements_and_Syntax / C14_Iterations_and_Comprehensions` 的新会话
+  启动模板。它基于 C13 阶段测验、阶段笔记、收束追问和最新学习画像生成，
+  只正式推进 C14。
 - [`PYTHON_LEARNING_ROADMAP.md`](PYTHON_LEARNING_ROADMAP.md)：可动态调整的
   Python 后续学习路线图。每次跨越大阶段边界，或学习目标发生明显变化时，
   应结合最新学习画像复核。
