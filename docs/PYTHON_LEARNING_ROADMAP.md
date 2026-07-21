@@ -1,6 +1,6 @@
 # Python Learning Roadmap
 
-更新时间：2026-06-22
+更新时间：2026-07-19
 
 ## 1. 定位
 
@@ -89,11 +89,17 @@ Python 3 版本是 Python `3.14.5`。
 | `C12_if_Tests_and_Syntax_Rules` | 原 C12 | 真值测试、布尔短路、条件表达式、语法规则；补充 `match` 的适用边界 |
 | `C13_while_and_for_Loops` | 原 C13 | `while`、`for`、`break`、`continue`、`else`、循环变量绑定、修改迭代对象的风险 |
 | `C14_Iterations_and_Comprehensions` | 原 C14 | 可迭代对象、迭代器、生成器预告、推导式作用域、惰性与急切求值 |
-| `C15_The_Documentation_Interlude` | 原 C15 | `help()`、`dir()`、文档字符串、官方文档检索；作为 P3 收束专题整合 |
+| `C15_The_Documentation_Interlude` | 原 C15 | `help()`、`dir()`、文档字符串、官方文档检索；章节角色为 `PART closer`，作为 P3 收束专题整合 |
 
 P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批处理工作流，用条件、
 循环、迭代和推导式组织资源筛选、规则执行和摘要输出。它可以调用既有项目，
 但不要为了复用而提前制造抽象层。
+
+这里的“阶段项目建议”是候选方向，不等于已经排期的强制 pre-quiz capstone。
+在用户、当前章节启动模板或其它权威路线证据明确确认前，C15 默认走
+`mainline -> stage quiz`；只有候选项目被明确安排后，才改为
+`mainline -> capstone -> stage quiz`。不能仅因为 C15 是 `PART closer` 就自动
+插入项目关卡。
 
 ## 6. 跨阶段专题
 
@@ -140,9 +146,10 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
 - 跨阶段治理收束期已经完成：历史项目、仓库结构、路线图和 Python `3.14.5`
   命令行迁移已经完成。
 - 当前大阶段：`P3_Statements_and_Syntax`；`C10_Introducing_Python_Statements`、
-  `C11_Assignments_Expressions_and_Prints`、`C12_if_Tests_and_Syntax_Rules` 与
-  `C13_while_and_for_Loops` 均已通过阶段测验，下一小阶段为
-  `C14_Iterations_and_Comprehensions`。
+  `C11_Assignments_Expressions_and_Prints`、`C12_if_Tests_and_Syntax_Rules`、
+  `C13_while_and_for_Loops` 与 `C14_Iterations_and_Comprehensions` 均已完成
+  章节收束。C14 是 `normal` chapter；下一小阶段
+  `C15_The_Documentation_Interlude` 是 P3 的 `PART closer`。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
@@ -150,10 +157,12 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
   `C10_Introducing_Python_Statements`；
   `C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md` 已用于推进 C11；
   `C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md` 已用于推进 C12；
-  `C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md` 已用于推进 C13。C13 阶段测验、
-  学习画像同步、阶段笔记整理和收束追问补充均已完成；现已生成
-  `C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md`。下一步应另开新会话，
-  正式推进 `C14_Iterations_and_Comprehensions`。
+  `C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md` 已用于推进 C13；
+  `C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md` 已用于推进 C14。
+  C14 阶段测验建议得分 `99 / 100`，逐题审批、学习画像同步、阶段末笔记与
+  长期记录职责复核均已完成；现已生成
+  `C15_THE_DOCUMENTATION_INTERLUDE_STARTUP_TEMPLATE.md`。下一步应另开新会话，
+  只正式推进 `C15_The_Documentation_Interlude`。
 
 ## 9. 官方参考
 

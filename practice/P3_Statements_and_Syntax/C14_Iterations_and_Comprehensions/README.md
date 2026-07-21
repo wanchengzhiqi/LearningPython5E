@@ -1,6 +1,6 @@
 # C14 Iterations and Comprehensions
 
-This directory starts `P3_Statements_and_Syntax / C14_Iterations_and_Comprehensions`.
+This directory records `P3_Statements_and_Syntax / C14_Iterations_and_Comprehensions`.
 
 The official entry for this chapter is
 `docs/C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md`. These scripts turn
@@ -11,6 +11,16 @@ comprehension keeps the code clearer than an explicit loop.
 `projects/P3_Statements_and_Syntax/prompt_template_manager/` is used only as a
 read-only real-code background. The scripts do not open, initialize, migrate, or
 modify its SQLite database.
+
+## Stage Outcome
+
+- The nine numbered experiments were validated with Python `3.14.5`.
+- [`stage_quiz_iterations_and_comprehensions.md`](stage_quiz_iterations_and_comprehensions.md)
+  was reviewed item by item; the suggested score is `99 / 100`.
+- The durable chapter note is in
+  [`notes/P3_Statements_and_Syntax.md`](../../../notes/P3_Statements_and_Syntax.md#16-c14-迭代与推导式消费位置求值时机和数据管道边界).
+- C14 is a normal chapter. Its handoff target is the P3 closer,
+  [`C15_The_Documentation_Interlude`](../../../docs/C15_THE_DOCUMENTATION_INTERLUDE_STARTUP_TEMPLATE.md).
 
 ## Core Chain
 
@@ -31,8 +41,14 @@ one-shot iterators:
 eager collection:
     list comprehension, set comprehension, dict comprehension, list(), tuple(), set(), dict()
 
-lazy consumption:
-    generator expression, zip, map, filter, file iteration, any(), all(), sum() inputs
+lazy producers:
+    generator expression, zip, map, filter, file iteration
+
+short-circuit consumers:
+    any(), all()
+
+full consumers:
+    list(), tuple(), set(), dict(), sorted(), sum()
 ```
 
 ## Run

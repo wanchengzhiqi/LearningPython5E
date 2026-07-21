@@ -36,13 +36,15 @@ def 语句执行 vs 函数体调用执行
     C11_Assignments_Expressions_and_Prints
     C12_if_Tests_and_Syntax_Rules
     C13_while_and_for_Loops
+    C14_Iterations_and_Comprehensions
 阶段小测：
     C10：96 / 100，通过
     C11：100 / 100，通过
     C12：100 / 100，通过
     C13：99 / 100，通过
-当前收束状态：C13 阶段测验审批、学习画像同步、阶段末笔记整理、收束追问补充和 C14 新会话启动模板已完成
-下一小阶段：C14_Iterations_and_Comprehensions
+    C14：99 / 100，通过
+当前收束状态：C14 正式主线、阶段测验审批、学习画像同步、阶段末笔记、长期记录职责复核和 C15 新会话启动模板均已完成；C14 已正式收束
+下一小阶段：C15_The_Documentation_Interlude（P3 的 PART closer，另开新会话）
 ```
 
 语句清单专题按 Python 3.14 官方语言参考中的 simple statements 与 compound
@@ -3760,3 +3762,993 @@ C13 阶段测验建议得分为 `99 / 100`，通过本阶段。主干没有概�
 ```
 
 进入 `C14_Iterations_and_Comprehensions` 后，要把 C13 已经压稳的显式循环模型继续推进到迭代协议、迭代器对象、推导式、生成器表达式、惰性求值和急切求值边界。下一阶段的重点不是把所有循环写短，而是判断哪些循环可以清晰地改写为推导式，哪些循环因为统计、错误处理、副作用或结构化报告需要继续保留显式写法。
+
+## 16. C14 迭代与推导式：消费位置、求值时机和数据管道边界
+
+`C14_Iterations_and_Comprehensions` 的真正目标不是背会几种推导式语法，而是能沿着下面的链条解释数据如何流动：
+
+```tex
+源对象
+    -> iter(obj) 取得迭代器
+    -> next(iterator) 推进消费位置
+    -> 过滤、转换或配对
+    -> 消费者决定何时停止
+    -> 得到结果，同时留下一个可描述的剩余状态
+```
+
+因此，看到任何迭代代码都应继续追问：谁是 iterable，谁是 iterator；谁保存位置；哪一次索取触发了工作；停止时是正常耗尽、短路、`break`、异常，还是迭代器已经不可达；源容器和内部元素对象有没有被修改。
+
+本阶段延续本地化资源审计与 `prompt_template_manager` 的真实代码语境：简单筛选、投影和稳定汇总可以使用推导式；包含统计、错误分流、日志、副作用或结构化报告的扫描继续保留显式循环。
+
+### 16.0 阶段状态和可追溯入口
+
+```tex
+2026-07-09：建立 C14 正式实验脚本与 README，并开始有限主线学习。
+2026-07-16：C14 阶段测验完成逐题审批，建议得分 99 / 100，通过；学习画像已同步。
+2026-07-17：追加 C14 阶段末笔记；最终长期记录职责复核与 C15 启动模板尚待后续执行。
+2026-07-19：完成长期记录职责复核并生成唯一 C15 启动模板；C14 正式收束。
+```
+
+相关阶段文件：
+
+```tex
+docs/C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md
+practice/P3_Statements_and_Syntax/C14_Iterations_and_Comprehensions/README.md
+practice/P3_Statements_and_Syntax/C14_Iterations_and_Comprehensions/stage_quiz_iterations_and_comprehensions.md
+notes/Python_Learning_Profile.md
+```
+
+正式实验脚本：
+
+```tex
+01_iter_next_stopiteration.py
+02_repeatable_vs_one_shot_iterables.py
+03_file_stringio_position_and_consumption.py
+04_comprehension_filter_transform_scope.py
+05_set_dict_comprehensions_stable_reports.py
+06_generator_expressions_lazy_short_circuit.py
+07_nested_comprehensions_execution_order.py
+08_localization_iteration_pipeline.py
+09_prompt_manager_iteration_reading_walkthrough.py
+```
+
+### 16.1 阶段地图
+
+本阶段正式主线按以下有限地图推进：
+
+```tex
+1. iterable、iterator、iter()、next()、StopIteration 与 for 背后的协议。
+2. 可重复遍历容器、独立迭代器和一次性迭代器对象。
+3. 文件对象与 StringIO 的共享流位置、EOF 契约和 seek() 边界。
+4. list / set / dict 推导式的过滤、转换、作用域、去重和碰撞。
+5. 生成器表达式、map()、filter()、zip() 的惰性求值与一次性消费。
+6. list()、sorted()、sum() 等完整消费者和 any()、all() 等短路消费者。
+7. 嵌套推导式从左到右的子句顺序，以及与显式循环的等价维度。
+8. zip(strict=True)、物化、多消费者、共享上游和稳定报告。
+9. 本地化审计中的输入契约、统计口径、失败路径和结构化结果。
+```
+
+阶段验收观察点：
+
+```tex
+1. 能指出对象的协议角色和真正保存消费位置的对象。
+2. 能逐次追踪 next()、list()、any() 等消费者推进到了哪里。
+3. 能区分急切构造、惰性生产、完整消费和短路消费。
+4. 能说明推导式隔离名字绑定，但不隔离共享对象或副作用。
+5. 能把“等价改写”限定到数据、调用、作用域、身份和副作用等具体维度。
+6. 能为一次性输入、对齐失败、重复 key 和稳定报告选择可审计的工程方案。
+```
+
+### 16.2 iterable、iterator 与迭代协议
+
+可迭代对象和迭代器不是两个互斥类型标签，而是两种协议角色：
+
+```tex
+iterable：
+    能交给 iter(obj) 取得一个迭代器。
+    它可能是可重复遍历的容器，也可能本身就是一次性迭代器。
+
+iterator：
+    保存当前消费状态；支持 next(iterator) 取得下一项。
+    它的 iter(iterator) 应返回自身，所以迭代器同时也是 iterable。
+```
+
+典型容器与迭代器的关系：
+
+```python
+items = [None, "HP", "MP"]
+it = iter(items)
+
+print(iter(items) is items)  # False：列表提供新的列表迭代器
+print(iter(it) is it)        # True：迭代器返回自身
+print(next(it))              # None：这是普通元素值
+print(next(it))              # HP
+print(next(it))              # MP
+print(next(it, "END"))       # END：默认值接住了协议终止
+```
+
+`StopIteration` 是迭代协议的终止信号，不是源数据中自动出现的 `None`。`next(it, default)` 在迭代器耗尽时返回调用方提供的默认值；若这个默认值也可能是合法数据，应使用唯一对象：
+
+```python
+END = object()
+item = next(it, END)
+
+if item is END:
+    print("iterator exhausted")
+```
+
+`for` 循环可以用下面的教学模型理解：
+
+```python
+iterator = iter(iterable)
+
+while True:
+    try:
+        item = next(iterator)
+    except StopIteration:
+        break
+
+    process(item)
+```
+
+真实 `for` 由解释器执行该协议，不需要业务代码手工捕获 `StopIteration`。这个展开模型的价值是帮助定位：`iter()` 通常在循环入口调用一次；每轮由 `next()` 取得一个元素；终止信号由循环语句吸收。
+
+还要保留两个边界：
+
+1. `iter(obj)` 是否创建新对象取决于 `obj` 的协议实现，不能机械地说“每次都新建”。
+2. `iter(obj)` 能成功，是最直接的运行期可迭代性测试；`collections.abc.Iterable` 的名义判断可能看不到只依赖旧式 `__getitem__` 回退的对象。
+
+### 16.3 独立消费位置、共享上游与文件式位置
+
+同一个列表可以提供多个彼此独立的迭代器：
+
+```python
+items = ["HP", "MP", "SP"]
+left = iter(items)
+right = iter(items)
+
+print(next(left))   # HP
+print(next(left))   # MP
+print(next(right))  # HP：right 有自己的位置
+```
+
+这里共享的是底层列表对象，不共享迭代器位置。列表仍完整；`left` 和 `right` 各自记录消费进度，这可以概念性地称为“独立游标”，但它不是对外公开的列表索引 API。反过来，若两个名字绑定同一个迭代器对象，它们共享同一个位置：
+
+```python
+source = iter(["HP", "MP", "SP"])
+a = source
+b = source
+
+print(next(a))  # HP
+print(next(b))  # MP
+```
+
+`zip`、`map`、`filter`、生成器表达式等会保存自己的迭代状态；若多个下游又共同引用同一个上游迭代器，下游之间仍会争用同一条数据流。先完整消费的下游可能让后来的下游只看到尾部，甚至直接为空。
+
+文件式对象把迭代位置与底层流位置结合在一起：
+
+```python
+from io import StringIO
+
+stream = StringIO("HP\nMP\nSP\n")
+
+print(repr(next(stream)))        # 'HP\n'
+print(repr(stream.readline()))   # 'MP\n'
+print(list(stream))              # ['SP\n']
+print(next(stream, "END"))       # END
+print(repr(stream.readline()))   # ''
+```
+
+`next(stream)`、`readline()` 和 `list(stream)` 操作同一个流位置，但 EOF 契约不同：迭代协议使用 `StopIteration`，`readline()` 使用空字符串。`seek(0)` 是 `StringIO`/文件 API 提供的重新定位能力，不是通用迭代器协议的“重置按钮”；普通 `zip`、`map`、`filter` 和生成器没有对应的 `seek()`。
+
+### 16.4 耗尽、部分消费、尾部保留与不可达
+
+“源里还有数据”和“当前代码还能继续拿到那些数据”不是同一个问题。描述迭代状态时至少要同时看：
+
+```tex
+1. 源对象是什么：容器、流，还是一次性上游。
+2. 当前迭代器推进到了哪里。
+3. 迭代器是否真的到达 StopIteration。
+4. 调用方是否仍持有该迭代器的引用。
+5. 是否还能从源容器重新取得一个新迭代器。
+```
+
+四种常见状态应严格分开：
+
+| 状态 | 当前迭代器 | 未读尾部 | 后续能力 |
+| --- | --- | --- | --- |
+| 正常耗尽 | 已到 `StopIteration` | 没有 | 再次消费仍为空 |
+| 部分消费且仍可达 | 尚未耗尽 | 仍在当前迭代器之后 | 可从当前位置继续 |
+| 部分消费但迭代器不可达 | 尚未耗尽，但临时引用已丢失 | 逻辑上仍在那个迭代器之后 | 不能再访问那条原消费轨迹 |
+| 源容器仍完整 | 容器本身不保存单一消费位置 | 容器元素仍在 | 可调用 `iter(container)` 重新遍历 |
+
+例如，函数内部直接遍历列表并在中途 `break`：
+
+```python
+def stop_at_bad(records):
+    for record in records:
+        if record == "BAD":
+            break
+
+
+records = ["HP", "BAD", "MP"]
+stop_at_bad(records)
+print(records)  # ['HP', 'BAD', 'MP']
+```
+
+这里的临时列表迭代器已经取出 `"BAD"`，但并未耗尽；函数返回后它通常不可达。列表本身完全没有被耗尽，因此之后可以创建新迭代器，从 `"HP"` 重新遍历。若调用方传入并保留的是 `source = iter(records)`，函数中途停止后，调用方则能继续从 `"MP"` 读取。
+
+短路和错误检测还可能发生“探测性多取一项”：
+
+```tex
+zip(..., strict=True)：
+    为确认某一侧更长，可能已经从那一侧取出一个无法组成结果的元素。
+
+精确解包：
+    为证明右侧“元素过多”，可能在目标数量之外再取一项，然后抛出 ValueError。
+
+takewhile()：
+    必须取出并检查第一个谓词为假的元素；该边界元素不会产出，也不会放回。
+```
+
+因此，异常或短路不是事务回滚。已经发生的 `next()`、函数调用、日志、计数和对象修改都不会自动撤销。阶段中关于 `zip(strict=True)` 的追问正说明了这一点：某个额外元素可能已被读取用于确认失配，即使它没有出现在已产出的 pair 或异常对象中。
+
+### 16.5 急切求值、惰性生产与消费者
+
+先区分“创建数据生产者”和“真正索取数据”：
+
+```tex
+急切构造：
+    列表推导式、集合推导式、字典推导式；
+    list()、tuple()、set()、dict()、sorted() 等需要建立完整结果的调用。
+
+惰性生产：
+    生成器表达式、map()、filter()、zip()、文件迭代。
+    创建对象时通常只建立管道；后续 next() 才逐项驱动工作。
+
+短路消费者：
+    any() 遇到第一个真值停止；
+    all() 遇到第一个假值停止。
+
+完整消费者：
+    list()、tuple()、set()、dict()、sorted()、sum() 通常持续索取到耗尽。
+```
+
+`map` / `filter` 的按需轨迹可以写成：
+
+```python
+raw = [" hp ", "   ", " mp "]
+
+missing = filter(lambda text: not text.strip(), raw)
+normalized = map(lambda text: text.strip().upper(), missing)
+```
+
+以上两行只建立惰性对象。第一次 `next(normalized)` 会向 `map` 索取一项；`map` 再向 `filter` 索取；`filter` 可能从 `raw` 的内部迭代器连续检查多项，直到找到通过谓词的原始元素；`map` 最后转换那一项。一次下游索取不保证只从源读取一个元素。
+
+生成器表达式有一个容易漏掉的精确边界：最左侧 `for ... in` 后的表达式会在生成器创建时求值，以取得最外层迭代器；循环体、过滤条件、结果表达式和后续子句仍在消费时惰性执行。
+
+```python
+def source():
+    print("source()")
+    return [1, 2, 3]
+
+
+generated = (value * 10 for value in source() if value % 2)
+print("A")
+print(next(generated))
+```
+
+这里 `source()` 先于 `"A"` 打印；奇偶检查和乘法仍等到 `next()` 才发生。
+
+短路消费者既返回结果，也留下消费状态：
+
+```python
+records = [False, False, True, False]
+checks = (value for value in records)
+
+print(any(checks))   # True：在第三项短路
+print(list(checks))  # [False]：第四项仍在尾部
+```
+
+`all()` 的对偶规则相同：遇到第一个假值停止。空输入遵循逻辑恒等值：
+
+```python
+all([])  # True：不存在反例
+any([])  # False：不存在真值见证
+```
+
+还要注意：内置生成器对象本身通常为真，`bool(generator)` 不是“是否还有元素”的检测。更严格地说，迭代器协议没有规定所有自定义迭代器都必须永久为真；自定义类型仍可另行实现真值协议。对一次性迭代器试探是否为空通常会消费一项，若必须保留它，需要重新设计接口、缓存首项或使用合适的分叉策略。
+
+物化是把一次性数据流变成可重复遍历外层容器的常见边界：
+
+```python
+active_records = list(record for record in records if record["enabled"])
+keys = [record["key"] for record in active_records]
+texts = [record["target"] for record in active_records]
+```
+
+代价是立即完成上游工作并占用与结果规模相关的内存。物化还只是收集元素引用；除非显式复制，内部可变对象仍与原数据共享。
+
+### 16.6 列表、集合、字典推导式的执行与对象边界
+
+一层列表推导式：
+
+```python
+result = [normalize(text) for text in raw if keep(text)]
+```
+
+按每个元素的真实执行顺序展开为：
+
+```python
+result = []
+
+for text in raw:
+    if keep(text):
+        result.append(normalize(text))
+```
+
+虽然结果表达式写在最前面，但每项必须先由后面的 `if keep(text)` 判定；只有通过过滤才调用 `normalize(text)`。列表推导式是急切构造，赋值语句结束时遍历、过滤、转换和列表建立都已经完成。
+
+Python 3 中，推导式循环目标位于推导式自己的隐式作用域中：
+
+```python
+text = "OUTER"
+result = [text.strip() for text in [" HP ", " MP "]]
+
+print(text)  # OUTER
+```
+
+隔离的是名字绑定，不是对象世界。推导式仍能修改它引用到的外部可变对象：
+
+```python
+audit = []
+keys = ["ui.hp", "ui.mp"]
+
+result = [audit.append(key) for key in keys]
+
+print(result)  # [None, None]
+print(audit)   # ['ui.hp', 'ui.mp']
+```
+
+这段代码合法却不清晰：`append()` 原地修改列表并返回 `None`，推导式因此制造无意义的结果列表，还把副作用隐藏在结果表达式中。只为副作用而遍历时，使用显式 `for`；若意图只是批量追加，且输入契约合适，也可使用 `audit.extend(keys)`。
+
+集合推导式适合规范化后去重：
+
+```python
+nonempty_keys = {
+    key.strip().lower()
+    for key, text in records
+    if text.strip()
+}
+```
+
+集合没有业务顺序承诺。哈希随机化可能影响观察到的排列，但“集合是无序抽象”才是首要规则。人读或可比对报告应写 `sorted(nonempty_keys)`；这里的价值是稳定、可复现的报告顺序，不应把排序本身误称为“幂等性”。
+
+字典推导式适合已经验证过的唯一 key 到 value 的映射：
+
+```python
+text_by_key = {
+    key.strip().lower(): text.strip()
+    for key, text in records
+    if text.strip()
+}
+```
+
+若多个原始 key 规范化为同一个 key，后写入的 value 会静默覆盖先前 value。覆盖现有 key 不会把它移动到字典末尾；该 key 仍保留第一次插入的位置。若重复本身是错误，就不能依赖字典推导式发现它，应在显式扫描中用 `seen_keys` 或结果映射按业务口径检测并报告。
+
+字典直接迭代默认产出 key；需要稳定成功结果时可用：
+
+```python
+valid_items = sorted(valid_by_key.items())
+```
+
+这会建立按 key 排序的新外层列表，但其中的可变 value 仍是原映射里的同一个对象。排序稳定视图不等于深层隔离快照。
+
+### 16.7 嵌套推导式与“等价改写”的具体维度
+
+嵌套推导式的子句从左到右建立嵌套层次：
+
+```python
+result = [
+    normalize(section, text)
+    for section, entries in groups
+    if enabled(section)
+    for text in entries_for(section, entries)
+    if keep(text)
+]
+```
+
+真实顺序是：
+
+```tex
+1. 从 groups 取得一个 (section, entries)。
+2. 调用 enabled(section)。
+3. 只有外层条件为真，才求值 entries_for(section, entries)。
+4. 从该内层 iterable 逐项取得 text。
+5. 调用 keep(text)。
+6. 只有内层条件为真，才调用 normalize(section, text) 并收集结果。
+7. 返回外层循环处理下一组。
+```
+
+对应的显式循环是：
+
+```python
+result = []
+
+for section, entries in groups:
+    if enabled(section):
+        for text in entries_for(section, entries):
+            if keep(text):
+                result.append(normalize(section, text))
+```
+
+这两个版本可以在以下维度上等价：遍历顺序、过滤路径、函数调用顺序、结果元素和结果顺序。但“语义等价”必须写明观察维度，不能无限扩大：
+
+| 维度 | 是否自动等价 | 需要检查什么 |
+| --- | --- | --- |
+| 结果值与顺序 | 可能 | 过滤和转换顺序是否一致 |
+| 上游取值次数 | 可能 | 惰性边界、短路和异常是否改变取值 |
+| 函数调用及副作用顺序 | 可能 | `if`、结果表达式和嵌套入口的位置 |
+| 外层名字环境 | 不自动 | 普通 `for` 目标会留在当前作用域 |
+| 对象身份与共享引用 | 不自动 | 是否构造新容器、是否复制内部对象 |
+| 异常时机与部分结果 | 不自动 | 急切/惰性求值何时触发异常 |
+| 内存占用与可重复消费 | 不自动 | 是列表、生成器还是一次性上游 |
+| 日志、统计和错误分流 | 不自动 | 是否隐藏了顺序或丢失中间状态 |
+
+阶段测验 C1 暴露的精修点正发生在“名字环境”维度。将显式循环目标从 `text` 改名为 `candidate`，可以避免覆盖已有的外层 `text`，但普通 `for` 不创建块级作用域；循环后 `candidate` 仍会新增或被重绑定。因此它与推导式在数据结果上等价，却不在完整名字环境上等价。若确实需要隔离普通循环目标，应把循环放进函数等真实作用域，而不是只换一个变量名。
+
+嵌套层数一多，读者需要在头脑中反向重建控制流。下列情况通常应退回显式循环：
+
+```tex
+1. 多层过滤对应不同业务原因。
+2. 需要多个统计字段或逐步状态。
+3. 有 break、continue、异常分流或资源清理。
+4. 需要日志、文件写入或可审计副作用。
+5. 中间结果有业务名称，值得显式保存。
+6. 推导式已经无法一眼看出执行顺序。
+```
+
+### 16.8 `zip(strict=True)`、物化与多消费者
+
+普通 `zip()` 默认在最短输入耗尽时停止，可能静默截断较长输入。`zip(..., strict=True)` 会在消费时验证所有输入是否同时耗尽，并在长度不一致时抛出 `ValueError`：
+
+```python
+pairs = zip(keys, texts, strict=True)
+```
+
+它能检查的是**当前两个迭代流的长度对齐**，不能恢复已经丢失的原始行身份。危险写法是先独立过滤两列，再配对：
+
+```python
+clean_keys = (key for key in keys if key.strip())
+clean_texts = (text for text in texts if text.strip())
+pairs = zip(clean_keys, clean_texts, strict=True)
+```
+
+即使过滤后的长度相等，某个 key 仍可能与另一原始行的 text 错配。可靠原则是先保留整行关系，再按整行过滤：
+
+```python
+clean_pairs = [
+    (key, text)
+    for key, text in zip(keys, texts, strict=True)
+    if key.strip() and text.strip()
+]
+```
+
+`strict=True` 的错误是惰性暴露、非事务式的。只有消费者继续索取到失配边界时才报错；之前已经产出的 pair、发生的计数和副作用不会回滚。为确认某侧更长，`zip` 还可能从该侧读取一个无法配对的额外元素。阶段追问中“为什么错误后只剩 `tail`，而不是 `note` 和 `tail`”的答案就是：`note` 已被失配检测用作探测项并丢失，只有尚未探测的 `tail` 仍留在上游。
+
+一个一次性上游不能无计划地交给多个消费者：
+
+```python
+active = (record for record in records if record["enabled"])
+keys = (record["key"] for record in active)
+texts = (record["target"] for record in active)
+
+print(list(keys))
+print(list(texts))  # active 可能已被 keys 耗尽
+```
+
+常见修复有三类：
+
+```tex
+方案一：先物化。
+    active_records = [record for record in records if record["enabled"]]
+    适合数据规模可控、需要重复遍历和稳定快照边界的场景。
+
+方案二：从可重复源分别重建管道。
+    适合源容器可重复遍历、每次筛选成本可接受的场景。
+
+方案三：itertools.tee() 分叉一次性上游。
+    适合分支步调接近、不能重建源又不想立即全部物化的场景。
+```
+
+`tee()` 创建的是多个逻辑迭代器，没有复制底层数据来源。为保证慢分支日后还能取得快分支已经越过的元素，它必须缓存分支之间的进度差。若一个分支读完而另一个几乎不动，缓存可能增长到接近全部数据；内存开销与分支步调差有关，不是恒定成本。
+
+物化解决的是重复遍历和消费所有权问题，但不自动提供深拷贝、不可变性或事务性：
+
+```python
+snapshot = list(records)
+```
+
+`snapshot` 是新的外层列表；其中元素通常仍是原来的对象。若需要隔离报告，应根据契约构造新的干净记录、浅复制指定层级、深复制，或转换成不可变投影，而不是只依赖 `list()`。
+
+### 16.9 稳定报告、输入契约与结构化扫描
+
+稳定报告不等于“所有结果都排序”。顺序要服务于语义：
+
+```tex
+带 line_no 的 issues：
+    通常保留源扫描顺序，方便回到原文件定位。
+
+纯 key 集合、缺失占位符集合：
+    使用 sorted(...)，得到可复现的人读顺序。
+
+成功结果映射的汇总视图：
+    valid_items = sorted(valid_by_key.items())。
+
+时间线日志：
+    最近优先时可 reversed(logs)，它反转既有位置顺序。
+
+严重度排名：
+    sorted(logs, key=severity, reverse=True)，它按内容重新排序。
+```
+
+`reversed()` 与降序排序不能混为一谈：前者基于已有位置，后者基于内容键建立新排名。字典视图如 `mapping.items()` 是动态、可重复遍历的视图；`list(mapping.items())` 或 `sorted(mapping.items())` 是创建时的浅外层快照，内部可变 value 仍可能共享。
+
+真实扫描函数还必须把类型策略写成输入契约。下面的写法不是纯清洗细节：
+
+```python
+key = str(record["key"]).strip().lower()
+target = "" if raw_target is None else str(raw_target).strip()
+```
+
+`str(...)` 会静默接纳整数、`None` 和自定义对象，可能掩盖上游类型错误或丢失结构信息。工程上应明确二选一：
+
+```tex
+严格模式：
+    key / target 必须是 str；否则报告 fatal error 或普通 issue。
+
+宽松模式：
+    明确允许字符串化；规定 None、数字和自定义对象的转换语义，
+    并接受信息损失与潜在 key 碰撞。
+```
+
+重复 key 也有不同口径：
+
+```tex
+if key in valid_by_key：
+    “此前已有一次成功写入”的重复。
+    第一次无效、第二次有效时，第二次仍可成为首个成功结果。
+
+if key in seen_keys：
+    “原始输入中已经出现过”的重复。
+    不论第一次是否有效，第二次都报告重复。
+```
+
+必须先写清业务定义，再选择状态容器。不能让某个方便的推导式或映射结构偷偷替业务做决定。
+
+本阶段综合审计函数保留显式循环，因为它同时承担：
+
+```tex
+1. 对任意 iterable 的单次消费和 enumerate() 原始位置。
+2. read / disabled / enabled / valid 的不同统计口径。
+3. 非字典、缺 key 等阻断错误与普通 issue 的分流。
+4. break、continue、重复 key 状态和占位符检查。
+5. 从原始输入构造新的干净结果，而不修改输入记录。
+6. 扫描结束后的稳定 valid_items 和结构化 return。
+```
+
+统计语句的位置就是口径：取得元素后立即增加 `read`，表示“已从上游读取”；禁用分支前后决定 `enabled` 是否包含禁用记录；所有检查通过并成功写入后才增加 `valid`。核心函数返回 `report`，不直接 `print()`；CLI 展示、日志、JSON/CSV 和文件写入留在外层边界。
+
+`prompt_template_manager` 的只读实验进一步给出了两种真实选型：
+
+```tex
+parse_tags：
+    需要去重且保留首次出现顺序，显式循环比 set 推导式更符合契约。
+
+tags_from_json 后的简单类型投影、活动且未锁定标题筛选：
+    数据已经结构化，适合列表/字典推导式。
+
+按内容哈希分组并找重复：
+    需要逐步维护 digest -> ids 状态，显式循环更清楚。
+```
+
+相关实验只导入纯辅助函数并读取源码文本，没有打开、初始化或修改 SQLite 数据库。这也体现工程边界：为了学习迭代写法，不应顺手扩大到持久化状态变更。
+
+### 16.10 本阶段你的理解轨迹、问题与修正规则
+
+1. 关于真实 `None` 与终止信号：
+
+   ```tex
+   你的判断：
+       next(it) 取得的 None 可以是普通元素；StopIteration 才是协议终止。
+
+   结论：
+       正确。
+       不要根据元素真值猜测迭代是否结束；next(it, sentinel) 的 sentinel
+       也应避免与合法数据相等或相同。
+   ```
+
+2. 关于两个列表迭代器和源列表：
+
+   ```tex
+   你的判断：
+       iter(items) 两次得到两个独立迭代器，各自维护位置；items 本身完好无损，
+       容器不应被描述为“耗尽”。
+
+   结论：
+       正确。
+       iterator 同时也是 iterable，但 iterable 不一定是 iterator。
+   ```
+
+3. 关于 `zip`、`map`、`filter` 和生成器：
+
+   ```tex
+   你的判断：
+       它们在 Python 3 中建立惰性、一次性的数据流；next() 按需索取，
+       list() 从当前位置收集剩余项，第二次完整收集通常为空。
+
+   结论：
+       正确。
+       还要继续指出过滤器为找到一个产出，可能检查多个上游元素。
+   ```
+
+4. 关于文件对象与 `seek(0)`：
+
+   ```tex
+   你的理解：
+       next()、readline() 和 list(stream) 共享流位置；seek(0) 后可重新读取，
+       但这不推翻一次性向前消费模型。
+
+   结论：
+       正确。
+       更精确地说，seek() 是具体流对象的定位 API，它改变后续读取所依赖的
+       流位置；它不是迭代器协议普遍提供的重置操作。
+   ```
+
+5. 关于推导式作用域和副作用：
+
+   ```tex
+   你的判断：
+       推导式循环目标不会泄漏到外层，但 audit.append(key) 仍能修改外部列表；
+       [audit.append(...)] 会收集 None，属于不清晰的副作用写法。
+
+   结论：
+       正确。
+       作用域隔离名字绑定，不隔离共享对象、I/O、函数调用或异常。
+   ```
+
+6. 关于集合顺序与稳定报告：
+
+   ```tex
+   你的原表述：
+       集合无序且受哈希随机化保护，所以直接打印不稳定；sorted() 使结果稳定。
+
+   精修：
+       结论方向正确，但语言契约首先是“set 没有业务顺序保证”；
+       哈希随机化只是观察顺序变化的一个影响因素。
+       sorted() 提供可复现顺序，不应把这种性质称为幂等性。
+   ```
+
+7. 关于生成器表达式的创建时机：
+
+   ```tex
+   你的判断：
+       最左侧 iterable 表达式 source() 在生成器创建时求值；过滤和转换仍惰性。
+
+   结论：
+       正确。
+       “生成器表达式完全什么都不做，直到 next()”是过度概括。
+   ```
+
+8. 关于 `any()` / `all()` 和剩余尾部：
+
+   ```tex
+   你的判断：
+       any() 在第一个真值短路，all() 在第一个假值短路；未索取的尾部仍可继续；
+       all([]) 为 True，any([]) 为 False。
+
+   结论：
+       正确。
+       内置生成器对象的真值不能用来判断是否为空；但不要把这一观察扩写成
+       “迭代器协议强制所有自定义迭代器永远为真”。
+   ```
+
+9. 关于 `tee()`：
+
+   ```tex
+   你的总结：
+       tee() 没有复制底层来源；它用缓存弥补分支步调差，内存开销随最大滞后增长。
+
+   结论：
+       正确。
+       “队列缓存”可以作为概念模型，但不应把它误当成必须依赖的具体内部实现。
+   ```
+
+10. 关于 `iter(callable, sentinel)`：
+
+    ```tex
+    你的发现：
+        sentinel 使用 == 比较；False == 0，因此以 0 为 sentinel 时，
+        callable 返回 False 会提前终止，而且这个终止值不产出。
+
+    精修：
+        False == 0 导致提前终止的判断正确，但不能只把 sentinel 参数改成 object()
+        而让原 callable 继续用 0 表示结束；那样二者永远不相等，迭代反而不会按原位置停止。
+        唯一 object 哨兵只在 callable 或包装器会于终止时返回“同一个哨兵对象”时成立。
+        否则应选择天然且无歧义的返回值哨兵，或改用显式循环表达结束契约。
+    ```
+
+11. 关于 `enumerate()` 的位置：
+
+    ```tex
+    你的判断：
+        先 enumerate 后过滤，编号代表源位置；先过滤后 enumerate，编号代表结果序号。
+
+    结论：
+        正确。
+        行号审计通常应先编号，紧凑展示序号通常可后编号。
+    ```
+
+12. 关于 `islice()` 消费到哪里：
+
+    ```tex
+    你的初始误判：
+        islice(start, stop, step) 只需产出足够次数，因此最后一次产出后即可停止，
+        被 step 跳过的末尾元素应保留。
+
+    修正：
+        islice 基于当前迭代位置工作，不是对序列索引做无副作用随机访问。
+        完整消费 islice 会把上游推进到 stop 边界，沿途未产出的跳步元素也会被读取；
+        stop 位置本身不属于切片。若同时绕过 islice 直接消费共享上游，后续观察位置还会改变。
+    ```
+
+13. 关于 `dropwhile()`：
+
+    ```tex
+    你的判断：
+        谓词第一次为假后，dropwhile 永久结束“丢弃前缀”阶段；
+        后续元素全部原样产出，不再调用谓词。
+
+    结论：
+        正确。
+        它不是对所有元素做 filter，而是在定位一个边界。
+    ```
+
+14. 关于恢复数据流与共享源：
+
+    ```tex
+    你的发现：
+        用 chain() 把已探测首项接回去，只能恢复那一项与同一 source 的未来尾部；
+        若外部先 next(source) 取走 MP，restored 就不可能再产出 MP。
+
+    结论：
+        正确。
+        包装器没有复制共享上游，也不能撤销其它消费者已经发生的消费。
+    ```
+
+15. 关于 `zip(strict=True)`、精确解包和隐藏探测：
+
+    ```tex
+    你的重点追问：
+        为什么失配后只剩 tail，而不是 note 与 tail？
+
+    修正模型：
+        为证明长度不一致，消费者必须多做一次 next() 探测；note 已被取出但无法组成结果，
+        不会自动放回，tail 才是尚未读取的部分。
+        同样，精确解包为了证明“过多”也可能消费目标数量之外的一项。
+    ```
+
+这些轨迹说明，本阶段真正需要长期保留的不是某个 API 的输出表，而是“每一次 `next()` 都会改变谁的状态，且不会自动回滚”的统一模型。
+
+### 16.11 可选迭代工具的紧凑边界
+
+以下工具是本会话中已经学习过的可选延伸，不属于 C14 阶段测验计分主线；只保留其耐久边界：
+
+```tex
+iter(callable, sentinel)：
+    重复调用无参数 callable，结果与 sentinel 相等时停止并吞掉该结果。
+
+tee(iterable, n)：
+    建立逻辑分支；共享一次性来源，通过缓存吸收分支进度差。
+
+chain(a, b, ...)：
+    顺序串联 iterable；不会复制任何共享上游。
+
+islice(iterable, start, stop, step)：
+    按迭代位置取样；完整消费会推进到 stop，跳过项同样会消耗。
+
+takewhile(predicate, iterable)：
+    产出真值前缀；第一个假值边界元素已被检查并丢弃。
+
+dropwhile(predicate, iterable)：
+    丢弃真值前缀；第一个假值起全部原样产出，不再检查谓词。
+
+groupby(iterable, key=...)：
+    只分组相邻连续项；组迭代器共享上游，通常应及时消费当前组。
+
+pairwise(iterable)：
+    保存一个前项形成相邻二元组；绕过它消费共享上游会改变后续邻接关系。
+
+batched(iterable, n, strict=False)：
+    按批次消费；strict=True 遇到不完整尾批时会在尾部报错，
+    但此前完整批次和副作用已经发生。
+
+reversed(sequence)：
+    反转既有位置顺序；不是按某个字段计算排名。
+```
+
+这些 API 的共同风险仍是共享状态、隐藏探测、部分消费和错误不回滚。知道工具名字不等于应该使用它；显式循环更能表达业务边界时，清晰度优先。
+
+### 16.12 阶段测验暴露的薄弱处与修正规则
+
+C14 阶段测验建议得分为 `99 / 100`。十二个计分项均完成逐题审批；全部输出预测正确，扣分只发生在两个术语覆盖范围上。
+
+```tex
+扣分点1：普通循环换名不等于获得推导式作用域（C1，扣 0.5 分）
+
+原答案：
+    使用 candidate 可保留外层 text，因此与推导式保持相同外部绑定效果。
+
+修正：
+    candidate 在普通 for 所在作用域中仍会新增或重绑定。
+    两个版本的数据流、调用顺序和 result 等价，不代表完整名字环境等价。
+
+长期规则：
+    说“等价”时明确结果、调用、作用域、身份、异常和副作用中的具体维度。
+```
+
+```tex
+扣分点2：fatal break 后的临时列表迭代器不一定耗尽（F1，扣 0.5 分）
+
+原答案：
+    records 是列表时，列表不耗尽；耗尽的是 for 内部创建的迭代器。
+
+修正：
+    只有正常完整扫描才会耗尽内部迭代器。
+    中途 break 时，它可能只消费到阻断记录；函数返回后只是因未保存而不可达。
+
+长期规则：
+    严格区分已耗尽、部分消费且可达、尾部仍在但迭代器不可达，
+    以及源容器仍能重新提供新迭代器。
+```
+
+三项不扣分但必须保留的工程补强：
+
+```tex
+1. str(...) 是输入转换策略，不是无害细节；严格拒绝还是允许转换必须成约。
+2. sorted(mapping.items()) 只建立排序稳定的新外层列表，不深复制可变 value。
+3. duplicate 的定义若从“第二次成功写入”改成“第二次原始出现”，
+   必须从 valid_by_key 检查改为独立 seen_keys 状态。
+```
+
+本次测验确认的稳定强项：
+
+```tex
+1. 能从协议层解释 iterable、iterator、iter()、next() 和 StopIteration。
+2. 能精确追踪独立位置、共享上游、文件位置、短路尾部和重复消费。
+3. 能指出惰性工作由哪个消费者的哪一次索取触发。
+4. 能解释推导式作用域、共享可变对象和副作用之间的层次。
+5. 能处理 set/dict 碰撞、稳定排序、zip 对齐与物化边界。
+6. 能设计一次扫描任意 iterable 的结构化本地化审计函数。
+```
+
+### 16.13 工程应知应会、禁忌和技巧清单
+
+协议与状态：
+
+```tex
+1. iterable 的职责是提供迭代器；iterator 的职责是保存位置并逐项产出。
+2. iterator 的 iter(iterator) 返回自身，因此 iterator 同时也是 iterable。
+3. next() 只能直接作用于 iterator；for 会先替你调用 iter()。
+4. StopIteration 是协议终止；None、False、0 和空字符串都可能是合法数据。
+5. next(it, default) 的 default 若可能与数据冲突，应使用唯一哨兵对象。
+6. 不要机械假设 iter(obj) 每次都创建新对象；检查对象的协议角色。
+7. 列表、字典、集合和字符串通常可重复遍历，因为能提供新迭代器。
+8. zip、map、filter、生成器表达式和多数文件对象通常保存一次性消费位置。
+9. 两个独立迭代器可以读取同一容器而互不共享位置。
+10. 两个名字或两个下游若共享同一迭代器，就共享并竞争同一位置。
+11. 容器不称为“耗尽”；应说明某个迭代器是否耗尽。
+12. 短路、break、异常只说明停止原因，不自动说明迭代器已耗尽。
+13. 尾部仍存在时，还要说明迭代器是否可达、源是否可重新迭代。
+14. 文件 next()、readline() 和迭代收集共享文件位置；EOF 契约各不相同。
+15. seek() 是流定位 API，不是所有迭代器共有的重置协议。
+```
+
+求值与消费：
+
+```tex
+16. 列表、集合、字典推导式在赋值完成前已经急切构造结果。
+17. 生成器表达式、map()、filter()、zip() 在消费者索取时逐项工作。
+18. 生成器表达式最左侧 iterable 表达式在创建时求值，其余环节仍可惰性。
+19. 一次下游 next() 可能让 filter 检查多个上游元素。
+20. list()、sorted()、sum() 等通常完整消费；any()、all() 会短路。
+21. any() 短路后可能留下尾部；all() 同理。
+22. all([]) 为 True，any([]) 为 False。
+23. 不要用 bool(generator) 判断生成器是否为空或耗尽。
+24. 用 next() 试探一次性迭代器前，先接受它会推进位置；必要时缓存首项。
+25. 物化能建立可重复遍历的外层容器，但会立即计算并占用结果规模的内存。
+26. 物化收集的是元素引用；新外层容器不等于深拷贝。
+```
+
+推导式与等价改写：
+
+```tex
+27. 推导式每项先执行 for，再执行对应 if，最后求值结果表达式。
+28. 多层 for / if 子句从左到右建立与显式嵌套循环相同的控制层次。
+29. 推导式循环目标不泄漏，但外部可变对象仍可能被原地修改。
+30. 不要用推导式只做 append()、日志、文件写入或其它复杂副作用。
+31. 集合推导式适合去重和成员集合；报告输出前按语义决定是否 sorted()。
+32. 字典推导式的重复 key 会静默后写覆盖；覆盖不会移动首次插入位置。
+33. 重复 key 是错误时，用显式状态检测，不要依赖构造后的字典反推。
+34. “等价改写”要标明结果、调用顺序、名字环境、身份、异常和副作用维度。
+35. 普通 for 换变量名只避免覆盖某个名字，不会获得推导式作用域。
+36. 包含统计、break、多个 continue、错误分流或结构化报告时，优先显式循环。
+```
+
+对齐、多消费者与报告：
+
+```tex
+37. 普通 zip() 默认静默截断到最短输入。
+38. zip(strict=True) 检查长度同时耗尽，不检查原始记录语义身份。
+39. 不要先独立过滤强相关的两列再 zip；先保持整行关系，再过滤整行。
+40. zip(strict=True) 惰性报错且不回滚，失配探测可能额外消费一项。
+41. 多消费者需要明确所有权：物化、从可重复源重建，或谨慎使用 tee()。
+42. tee() 的缓存随分支步调差增长，不能当作零成本复制。
+43. enumerate() 放在过滤前得到源位置，放在过滤后得到紧凑结果序号。
+44. 带 line_no 的 issues 通常保留源顺序；纯 key 集合和缺项集合通常排序。
+45. reversed() 反转既有顺序；sorted(..., key=..., reverse=True) 按内容排名。
+46. sorted(mapping.items()) 是排序后的浅外层视图，不是深层不可变快照。
+47. 动态字典视图与 list(...) 快照要分开：前者随映射变化，后者固定外层项序列。
+```
+
+输入契约与扫描工具：
+
+```tex
+48. str(...) 静默转换必须是明确业务策略，不能由实现顺手决定。
+49. key、target、None、数字和自定义对象的接受/拒绝规则应写进输入契约。
+50. duplicate 是“第二次出现”还是“第二次成功写入”，要先定义再选 seen_keys 或 valid_by_key。
+51. 统计语句的位置决定 read、enabled、valid 等字段的真实口径。
+52. fatal error 表示结构上无法可靠继续；ordinary issue 表示可记录后继续扫描。
+53. 异常与 break 不会回滚此前的计数、追加、读取或对象修改。
+54. 核心扫描函数返回结构化 report；print、日志和文件写入属于外层展示边界。
+55. 原始输入到成功结果优先构造新的干净记录，不直接复用或修改输入字典。
+56. 简单过滤、投影、缺项排序适合推导式；多步分组、统计和错误控制适合显式循环。
+57. 读取真实项目代码作为教学背景时，保持持久化边界；本阶段不打开或修改 prompt manager SQLite。
+```
+
+最常见禁忌可以压缩为七条：
+
+```tex
+1. 不把容器说成耗尽。
+2. 不把短路或 break 自动说成迭代器耗尽。
+3. 不用生成器对象的真值判断剩余元素。
+4. 不让两个消费者无意争用同一个一次性上游。
+5. 不把 zip(strict=True) 当作语义对齐或事务回滚机制。
+6. 不为追求一行代码把统计、错误和副作用塞进推导式。
+7. 不把“新外层容器/排序视图”误称为深拷贝或深层快照。
+```
+
+### 16.14 阶段精髓小结
+
+```tex
+1. C14 的核心不是把 for 写短，而是理解谁在提供数据、谁在保存位置、谁在消费。
+2. iterable 能提供 iterator；iterator 用 next() 逐项推进，并以 StopIteration 终止。
+3. None 是普通数据的可能值，不能代替协议终止信号。
+4. 可重复遍历属于源对象提供新迭代器的能力；一次性消费属于具体迭代器状态。
+5. 多个独立迭代器有独立位置；多个引用或下游共享同一迭代器时共享位置。
+6. 文件对象把迭代位置与流位置结合；seek() 是额外流能力，不是通用重置协议。
+7. 已耗尽、部分消费且可达、尾部仍在但迭代器不可达、源容器可重遍历必须分开。
+8. 惰性生产把工作推迟到消费者索取；急切构造在表达式结束前完成结果。
+9. 短路消费者的价值不仅是返回真假，还包括避免不必要的后续计算。
+10. 短路、异常和失配检测可能留下尾部，也可能为了判定边界多消费一项。
+11. 推导式适合清楚的过滤、转换和容器构造；复杂状态迁移应保留显式循环。
+12. 推导式隔离循环目标名字，不隔离共享对象、副作用、异常或底层数据来源。
+13. 集合负责集合语义，不负责业务顺序；稳定报告按语义排序。
+14. 字典碰撞默认静默后写覆盖；重复是错误时必须显式审计。
+15. 嵌套推导式按左到右子句展开；可读性低于显式循环时应主动展开。
+16. 等价改写只在指定观察维度成立，不自动覆盖作用域、身份、异常和副作用。
+17. zip(strict=True) 检查当前流长度，不保证原始行身份，也不提供回滚。
+18. 物化解决重复遍历和所有权问题，但付出立即计算、内存和浅引用共享代价。
+19. 输入类型转换、重复口径、统计位置和稳定顺序都属于业务契约。
+20. C14 的工程价值，是把 C13 的显式循环提升为可解释、可组合、可审计的数据流模型。
+```
