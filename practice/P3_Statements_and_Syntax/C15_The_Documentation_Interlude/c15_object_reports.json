@@ -1,0 +1,420 @@
+{
+  "list_iterator": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.list_iterator",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<list_iterator object at 0x00000228273705E0>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": null
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 28,
+      "filtered_count": 0,
+      "shown": [],
+      "truncated": false
+    },
+    "static_members": [],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "zip": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.zip",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<zip object at 0x00000228279FA380>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": "The zip object yields n-length tuples, where n is the number of iterables passed as positional arguments to zip().  The i-th element in every tuple comes from the i-th iterable argument to zip().  This continues until the shortest argument is exhausted."
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 27,
+      "filtered_count": 0,
+      "shown": [],
+      "truncated": false
+    },
+    "static_members": [],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "dict_items": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.dict_items",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "dict_items([('ui.start', '开始游戏'), ('ui.quit', '退出游戏')])"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": null
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 38,
+      "filtered_count": 2,
+      "shown": [
+        "isdisjoint",
+        "mapping"
+      ],
+      "truncated": false
+    },
+    "static_members": [
+      {
+        "name": "isdisjoint",
+        "status": "ok",
+        "stored_type": "builtins.method_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<method 'isdisjoint' of 'dict_items' objects>"
+        }
+      },
+      {
+        "name": "mapping",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'mapping' of 'dict_items' objects>"
+        }
+      }
+    ],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "generator": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.generator",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<generator object <genexpr> at 0x0000022827450E10>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": null
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 38,
+      "filtered_count": 8,
+      "shown": [
+        "close",
+        "gi_code",
+        "gi_frame",
+        "gi_running",
+        "gi_suspended",
+        "gi_yieldfrom",
+        "send",
+        "throw"
+      ],
+      "truncated": false
+    },
+    "static_members": [
+      {
+        "name": "close",
+        "status": "ok",
+        "stored_type": "builtins.method_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<method 'close' of 'generator' objects>"
+        }
+      },
+      {
+        "name": "gi_code",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'gi_code' of 'generator' objects>"
+        }
+      },
+      {
+        "name": "gi_frame",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'gi_frame' of 'generator' objects>"
+        }
+      },
+      {
+        "name": "gi_running",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'gi_running' of 'generator' objects>"
+        }
+      },
+      {
+        "name": "gi_suspended",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'gi_suspended' of 'generator' objects>"
+        }
+      },
+      {
+        "name": "gi_yieldfrom",
+        "status": "ok",
+        "stored_type": "builtins.getset_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<attribute 'gi_yieldfrom' of 'generator' objects>"
+        }
+      }
+    ],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "range": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.range",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "range(1, 6, 2)"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": "range(stop) -> range object range(start, stop[, step]) -> range object"
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 35,
+      "filtered_count": 5,
+      "shown": [
+        "count",
+        "index",
+        "start",
+        "step",
+        "stop"
+      ],
+      "truncated": false
+    },
+    "static_members": [
+      {
+        "name": "count",
+        "status": "ok",
+        "stored_type": "builtins.method_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<method 'count' of 'range' objects>"
+        }
+      },
+      {
+        "name": "index",
+        "status": "ok",
+        "stored_type": "builtins.method_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<method 'index' of 'range' objects>"
+        }
+      },
+      {
+        "name": "start",
+        "status": "ok",
+        "stored_type": "builtins.member_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<member 'start' of 'range' objects>"
+        }
+      },
+      {
+        "name": "step",
+        "status": "ok",
+        "stored_type": "builtins.member_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<member 'step' of 'range' objects>"
+        }
+      },
+      {
+        "name": "stop",
+        "status": "ok",
+        "stored_type": "builtins.member_descriptor",
+        "stored_repr": {
+          "status": "ok",
+          "value": "<member 'stop' of 'range' objects>"
+        }
+      }
+    ],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "enumerate": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.enumerate",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<enumerate object at 0x0000022827470BD0>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": "Return an enumerate object."
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 27,
+      "filtered_count": 0,
+      "shown": [],
+      "truncated": false
+    },
+    "static_members": [],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "map": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.map",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<map object at 0x0000022827A5E680>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": "Make an iterator that computes the function using arguments from each of the iterables.  Stops when the shortest iterable is exhausted."
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 27,
+      "filtered_count": 0,
+      "shown": [],
+      "truncated": false
+    },
+    "static_members": [],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  },
+  "filter": {
+    "environment": {
+      "python_version": "3.14.5 (tags/v3.14.5:5607950, May 10 2026, 10:43:50) [MSC v.1944 64 bit (AMD64)]",
+      "executable": "D:\\MySoftwareDownload\\PythonPractice\\LearningPython5E\\.venv-py314\\Scripts\\python.exe",
+      "implementation": "cpython"
+    },
+    "object": {
+      "type": "builtins.filter",
+      "callable": false,
+      "repr": {
+        "status": "ok",
+        "value": "<filter object at 0x0000022827A3D1B0>"
+      }
+    },
+    "documentation": {
+      "status": "ok",
+      "value": "Return an iterator yielding those items of iterable for which function(item) is true. If function is None, return the items that are true."
+    },
+    "signature": {
+      "status": "not_applicable",
+      "reason": "object is not callable"
+    },
+    "candidate_names": {
+      "status": "ok",
+      "reported_count": 26,
+      "filtered_count": 0,
+      "shown": [],
+      "truncated": false
+    },
+    "static_members": [],
+    "help": {
+      "status": "skipped",
+      "reason": "include_help is False"
+    }
+  }
+}
