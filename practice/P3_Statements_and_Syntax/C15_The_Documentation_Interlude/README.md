@@ -1,6 +1,6 @@
 # C15 The Documentation Interlude
 
-This directory contains the preparation artifacts for
+This directory contains the validated learning artifacts for
 P3_Statements_and_Syntax / C15_The_Documentation_Interlude. The authoritative
 curriculum entry is
 [C15_THE_DOCUMENTATION_INTERLUDE_STARTUP_TEMPLATE.md](../../../docs/C15_THE_DOCUMENTATION_INTERLUDE_STARTUP_TEMPLATE.md).
@@ -17,9 +17,28 @@ curriculum entry is
 - Default mainline exit: mainline 100% -> stage quiz.
 - Capstone status: not scheduled. The localization batch workflow remains a
   candidate rather than a required C15 artifact.
+- Closeout status: final_closeout completed on 2026-07-26; P3 is closed and P4
+  teaching has not started in this chapter session.
 
 C15 closes P3 and prepares a handoff question set for P4; it does not begin
 systematic P4 teaching.
+
+## Completion Evidence
+
+- The six numbered experiments and finite mainline were completed.
+- The stage quiz was reviewed question by question: 11 / 11 questions,
+  recommended score 98 / 100.
+- The final review judgment was synchronized to
+  `notes/Python_Learning_Profile.md` without changing the stable score.
+- The C15 stage-end note is recorded under `## 17` in
+  `notes/P3_Statements_and_Syntax.md`.
+- No physical-book follow-up occurred; optional follow-up is not a closeout
+  gate and no replacement work is required.
+- The candidate localization batch workflow was never scheduled as a pre-quiz
+  capstone and is not retroactively treated as one.
+- The next chapter entry is
+  `docs/C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md`; C16 must start in a fresh
+  conversation.
 
 ## Run
 

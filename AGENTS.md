@@ -39,9 +39,10 @@
   读者索引；`AGENTS.md` 只保留持久规则、安全边界、目录职责、环境边界和
   代理工作流，不逐章镜像当前小阶段。用户级 Codex 记忆只在用户明确要求时
   同步。
-- `P2_Types_and_Operations` 已通过收束验收，当前学习主线已进入
-  `P3_Statements_and_Syntax`。具体小阶段状态、下一章启动模板和阶段测验结果
-  以 `docs/PYTHON_LEARNING_ROADMAP.md`、`notes/Python_Learning_Profile.md`
+- `P2_Types_and_Operations` 与 `P3_Statements_and_Syntax` 均已通过收束验收。
+  下一学习主线为 `P4_Functions_and_Generators`，从其 `PART opener`
+  `C16_Function_Basics` 另开新会话。具体小阶段状态、下一章启动模板和阶段测验
+  结果以 `docs/PYTHON_LEARNING_ROADMAP.md`、`notes/Python_Learning_Profile.md`
   和 `docs/README.md` 为准。
 - Python `3.14.5` 并行安装、`.venv-py314` 创建和命令行回归已经完成。
   旧 Python `3.9.13` 与旧 `.venv` 保留用于历史实验回归。PyCharm 升级暂缓；

@@ -30,15 +30,15 @@ def 语句执行 vs 函数体调用执行
 当前状态：
 
 ```tex
-当前大阶段：P3_Statements_and_Syntax
+当前大阶段：P3_Statements_and_Syntax（已完成最终收束）
 已完成小阶段：
     C10_Introducing_Python_Statements
     C11_Assignments_Expressions_and_Prints
     C12_if_Tests_and_Syntax_Rules
     C13_while_and_for_Loops
     C14_Iterations_and_Comprehensions
-当前小阶段：
-    C15_The_Documentation_Interlude（P3 的 PART closer）
+收束章节：
+    C15_The_Documentation_Interlude（P3 的 PART closer，已完成）
 阶段小测：
     C10：96 / 100，通过
     C11：100 / 100，通过
@@ -46,8 +46,8 @@ def 语句执行 vs 函数体调用执行
     C13：99 / 100，通过
     C14：99 / 100，通过
     C15：98 / 100，通过
-当前收束状态：C15 前置准备、正式主线、阶段测验逐题审批、学习画像同步和阶段末笔记均已完成；P3 长期记录职责复核与 final_closeout 尚待执行
-下一原子动作：执行 C15 / P3 最终收束关卡；当前不提前进入 P4
+当前收束状态：C15 前置准备、正式主线、阶段测验逐题审批、学习画像同步、阶段末笔记、P3 路线协调和 final_closeout 均已完成
+下一入口：另开新会话，使用 docs/C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md 进入 P4 / C16_Function_Basics；本会话未开始 P4 教学
 ```
 
 语句清单专题按 Python 3.14 官方语言参考中的 simple statements 与 compound
@@ -4781,8 +4781,9 @@ C15 是 P3 的 `PART closer`。它既要建立日常查证能力，也要把表�
 2026-07-22 至 2026-07-23：完成六步有限正式主线，主线达到 100%。
 2026-07-24：完成 11 / 11 题逐题审批，阶段测验建议得分 98 / 100。
 2026-07-24：学习画像同步完成，并追加本阶段末笔记。
+2026-07-26：完成 P3 路线协调、耐久记录职责审计和 C16 新会话交接。
 
-当前生命周期阶段：final_closeout（尚未执行）。
+当前生命周期状态：C15 final_closeout 已完成；P3 已关闭，P4 尚未开始教学。
 ```
 
 唯一权威路线：
@@ -4819,7 +4820,7 @@ preparation
     -> quiz_answering
     -> quiz_review
     -> stage_note
-    -> final_closeout（尚待）
+    -> final_closeout（2026-07-26 已完成）
 ```
 
 ### 17.1 阶段地图、应知应会与本质模型
@@ -5495,7 +5496,7 @@ inspect.signature()
 
 长期规则：
 
-> 反射与内省本身也是运行期行为；在调用前不仅审查目标函数，还要审查调查工具会触发哪些协议。
+> 反射与内省本身也是运行期行为；在调用前不仅要审查目标函数，还要审查调查工具会触发哪些协议。
 
 #### 17.9.2 F1：工程证明边界仍需收紧（扣 1.5 分）
 
@@ -5672,6 +5673,6 @@ P3 综合代码审查：
    有限证据，不能证明整个时间窗口绝无变化。
 9. C10-C15 可统一为：求值/执行 -> 绑定/修改 -> 真值/分支 -> 循环退出
    -> iterator 位置 -> 证据来源；能限定证明强度，才形成可迁移的代码审查能力。
-10. C15 已完成主线、测验审批、画像和阶段末笔记；下一关卡是 P3 的
-    `final_closeout`，尚未开始 P4。
+10. C15 与 P3 已完成 `final_closeout`；下一入口是在新会话中准备 P4 的
+    `PART opener` `C16_Function_Basics`，本会话尚未开始 P4 教学。
 ```

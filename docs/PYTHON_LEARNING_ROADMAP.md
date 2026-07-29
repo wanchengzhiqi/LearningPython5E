@@ -1,6 +1,6 @@
 # Python Learning Roadmap
 
-更新时间：2026-07-19
+更新时间：2026-07-26
 
 ## 1. 定位
 
@@ -24,7 +24,7 @@ Edition》目录的机械复刻。
 2. **继续使用对象模型解释路线。**
    每个新主题继续追问：创建了什么对象、名字绑定到哪里、协议如何工作、
    哪些变化发生在内存对象、文件、网络或进程边界。
-3. **保持“概念 -> 小实验 -> 阶段项目 -> 测验 -> 笔记”的闭环。**
+3. **保持“概念 -> 小实验 -> 按需阶段项目 -> 测验 -> 笔记”的闭环。**
 4. **工程化能力逐步加入。**
    不等读完整本书后才接触测试、类型标注、虚拟环境、打包、日志和并发。
 5. **抽象必须有真实需求。**
@@ -73,10 +73,11 @@ Python 3 版本是 Python `3.14.5`。
 - **元类必须学，但不追求滥用**：目标是理解框架和高级库的机制，而不是把元类
   当作日常首选工具。
 
-## 5. 下一大阶段：P3 细化建议
+## 5. 已完成大阶段：P3 章级路线与收束结论
 
-`P3_Statements_and_Syntax` 是下一步。它不应退化成简单语法背诵，而应把已经
-掌握的对象模型迁移到“程序如何决定下一步执行什么”。
+`P3_Statements_and_Syntax` 已于 2026-07-26 完成最终收束。它没有退化成简单
+语法背诵，而是把此前的对象模型迁移到“程序如何决定下一步执行什么”，并在 C15
+进一步形成证据驱动的代码调查与自查方法。
 
 学习会话继续保持章节级粒度：每个新会话只正式推进一个 `CHAPTER`。`PART`
 和相邻章节用于提供路线背景；当前章节验收后，再为下一个章节生成启动模板并
@@ -91,17 +92,113 @@ Python 3 版本是 Python `3.14.5`。
 | `C14_Iterations_and_Comprehensions` | 原 C14 | 可迭代对象、迭代器、生成器预告、推导式作用域、惰性与急切求值 |
 | `C15_The_Documentation_Interlude` | 原 C15 | `help()`、`dir()`、文档字符串、官方文档检索；章节角色为 `PART closer`，作为 P3 收束专题整合 |
 
-P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批处理工作流，用条件、
+P3 阶段项目建议曾沿用游戏本地化语境：实现一个可配置的批处理工作流，用条件、
 循环、迭代和推导式组织资源筛选、规则执行和摘要输出。它可以调用既有项目，
 但不要为了复用而提前制造抽象层。
 
-这里的“阶段项目建议”是候选方向，不等于已经排期的强制 pre-quiz capstone。
-在用户、当前章节启动模板或其它权威路线证据明确确认前，C15 默认走
-`mainline -> stage quiz`；只有候选项目被明确安排后，才改为
-`mainline -> capstone -> stage quiz`。不能仅因为 C15 是 `PART closer` 就自动
-插入项目关卡。
+最终关卡结论是：该建议始终只是候选方向，从未被排期为 C15 的强制 pre-quiz
+capstone。C15 实际按 `mainline -> stage quiz` 完成；
+`prompt_template_manager` 继续作为 P3 支持性工程背景，不被事后追认为 capstone。
+这是 P3 的历史完成结论，后续不得因为 C15 是 `PART closer` 而补造项目关卡。
 
-## 6. 跨阶段专题
+## 6. 下一大阶段：P4 章级路线
+
+`P4_Functions_and_Generators` 是 P3 收束后的下一大阶段。用户当初提供的 P3-P8
+目录摘录已保存到
+[`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)；
+该文件只负责来源追溯，本路线图仍是定制课程的权威记录。
+
+P4 的共同主线是把 P3 已掌握的执行、绑定、控制流、迭代与证据模型推进到函数
+调用边界：
+
+```text
+def 执行并创建函数对象
+    -> 名字与函数对象绑定
+    -> 调用时建立参数与局部状态
+    -> 按作用域解析名字
+    -> return 把对象交给调用者
+    -> 闭包、高阶函数与生成器保存或组合行为
+    -> 用合同证据和可重复测量核验设计
+```
+
+| 小阶段 | 来源映射 | 章节角色 | 核心定位 |
+| --- | --- | --- | --- |
+| `C16_Function_Basics` | 原 C16 | `PART opener` | 函数对象、`def`、调用、函数体执行、显式/隐式 `return` 与副作用边界 |
+| `C17_Scopes` | 原 C17 | `normal` | LEGB、局部/全局/内置名字、`global` / `nonlocal` 和闭包入口 |
+| `C18_Arguments` | 原 C18 | `normal` | 实参与形参绑定、位置/关键字参数、默认值、收集与解包、可变默认值 |
+| `C19_Advanced_Function_Topics` | 原 C19 | `normal` | 一等函数、高阶组合、闭包晚绑定、递归、lambda 与函数注解 |
+| `C20_Comprehensions_Revisited_and_Generators` | 原 `C20_Comprehensions(Revisited)_and_Generations` | `normal` | 以 C14 为前置，新增生成器函数、`yield`、暂停帧、恢复点与单次消费 |
+| `C21_Benchmarking_and_Function_Pitfalls` | 原 C21 | `PART closer` | 可重复基准、函数常见陷阱、P4 综合复核和下一 PART 交接 |
+
+C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3 并留下函数对象、
+参数绑定、名字解析、返回合同和注解边界五类交接问题；来源索引与本路线都把 C16
+放在 P4 首位；而 C16 的函数对象与调用模型又是 C17-C21 的共同依赖根。
+
+### 6.1 `C16_Function_Basics`：函数对象、调用与返回
+
+- **定制重点**：`def` 语句执行时创建函数对象并绑定名字；函数对象、调用表达式与
+  调用结果不是同一对象；调用才执行函数体；显式 `return value`、裸 `return`、执行
+  到末尾得到 `None`；返回对象、`print()`、原地修改和外部 I/O 是不同效果。
+- **前后依赖**：承接 C10 的 `def` 时间线、C11 的绑定与输出/返回、C15 的合同证据；
+  只建立参数与作用域问题入口，把完整 LEGB 留给 C17、完整参数绑定留给 C18。
+- **现代补充**：可观察基本签名、docstring 和注解元数据，但继续强调注解不自动执行
+  类型验证；系统注解设计留给 C19。
+- **阶段检查点候选**：小型纯函数拆分与调用/返回轨迹实验，不是 P4 capstone。
+
+### 6.2 `C17_Scopes`：名字解析与闭包入口
+
+- **定制重点**：LEGB、局部/全局/内置名字、嵌套函数、`global`、`nonlocal`、
+  `UnboundLocalError`；继续区分名字重新绑定与所指对象的原地修改。
+- **前后依赖**：以前一章的函数调用与局部状态为基础，为 C18 参数名字和 C19
+  闭包/回调建立名字解析模型。
+- **现代补充**：优先显式传递依赖，避免隐式全局可变状态；运行期命名空间观察仍须
+  保留 C15 的“内省可能执行代码”边界。
+- **阶段检查点候选**：作用域追踪器或不依赖全局可变状态的配置函数。
+
+### 6.3 `C18_Arguments`：调用合同与参数绑定
+
+- **定制重点**：实参与形参的临时绑定、位置/关键字参数、默认值、`*args`、
+  `**kwargs`、调用端解包、可变对象共享和可变默认值陷阱。
+- **前后依赖**：承接 C16 调用、C17 局部作用域、P2 可变性和 C11 解包；为 C19
+  高阶函数合同与 C20 可组合管线准备稳定接口。
+- **现代补充**：系统加入 `/` positional-only 和 `*` keyword-only；可用
+  `Signature.bind()` 辅助观察，但不把呈现签名或绑定成功提升为完整行为保证。
+- **阶段检查点候选**：带 keyword-only 控制项的本地化审计函数与参数绑定矩阵。
+
+### 6.4 `C19_Advanced_Function_Topics`：组合、闭包、递归与注解
+
+- **定制重点**：函数是一等对象；回调、分派表、闭包与晚绑定；递归的基线与终止；
+  lambda 的有限适用范围；函数注解的元数据性质。
+- **前后依赖**：综合 C16-C18，并为 C20 的生产者函数和 C21 的陷阱复盘提供函数
+  组合基础。
+- **现代补充**：首次系统加入参数/返回注解和 `Callable` 基础，但不把注解当成
+  运行期强制；装饰器只作入口预告，系统学习仍留给 P8/C39。
+- **阶段检查点候选**：可组合规则注册表或本地化转换函数管线。
+
+### 6.5 `C20_Comprehensions_Revisited_and_Generators`：生成器函数状态
+
+- **定制重点**：不重复 C14 的推导式基础；集中学习生成器函数、`yield`、暂停帧、
+  恢复点、局部状态、`return` / `StopIteration`、生成器表达式与生成器函数的差异。
+- **前后依赖**：以 C14 的迭代协议和单次消费为直接前置，并综合 C16-C19 的函数、
+  作用域与参数模型；为 C21 比较急切/惰性方案准备等价工作负载。
+- **现代补充**：`yield from` 作为小型委托机制；`send()` 等协程式接口只列为可选
+  拓展，不提前转入异步或并发教学。
+- **阶段检查点候选**：流式本地化记录处理管线及其与物化方案的语义对照。
+
+### 6.6 `C21_Benchmarking_and_Function_Pitfalls`：P4 收束
+
+- **定制重点**：`timeit` 与计时基本方法；正确性先于性能；复核可变默认值、晚绑定
+  闭包、递归限制、生成器复用、过度抽象和注解误用。
+- **前后依赖**：综合整个 P4；只建立模块/包边界的交接问题，不提前系统教授 P5。
+- **现代补充**：`time.perf_counter()`、重复测量、代表值、热身与环境记录；明确微基准
+  不能无条件外推生产性能，`cProfile` 只作可选入口。
+- **阶段成果候选**：“可组合函数管线 + 可复现实验/基准报告”。它当前仍是候选，
+  是否成为 C21 的 pre-quiz capstone 必须等权威路线或用户以后明确排期。
+
+P4 仍按一个会话一个 `CHAPTER` 推进。本节只冻结 C16-C21 的章级路由与依赖，不把
+整个 P4 变成一次会话任务，也不提前冻结 P5 以后的逐章教学细节。
+
+## 7. 跨阶段专题
 
 这些主题不必等待某一个专属大阶段才首次接触：
 
@@ -115,7 +212,7 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
 | 并发与网络 | `myimporter_system` 已有观察素材 | PX2 系统学习 |
 | 仓库级公共 `src/` | P5 讨论归属规则 | PX1 有真实复用需求后再启用 |
 
-## 7. 动态调整规则
+## 8. 动态调整规则
 
 路线图不是冻结合同。出现以下情况时，应复核并按需更新：
 
@@ -139,32 +236,26 @@ P3 阶段项目建议沿用游戏本地化语境：实现一个可配置的批�
 改变后，还应按文档职责审计长期记录，只更新受影响的文件，避免仓库级说明、
 路线图、学习画像和项目文档互相漂移。
 
-## 8. 当前状态
+## 9. 当前状态
 
 - `P1_Getting_Started`：已完成。
 - `P2_Types_and_Operations`：已通过收束验收。
-- 跨阶段治理收束期已经完成：历史项目、仓库结构、路线图和 Python `3.14.5`
-  命令行迁移已经完成。
-- 当前大阶段：`P3_Statements_and_Syntax`；`C10_Introducing_Python_Statements`、
-  `C11_Assignments_Expressions_and_Prints`、`C12_if_Tests_and_Syntax_Rules`、
-  `C13_while_and_for_Loops` 与 `C14_Iterations_and_Comprehensions` 均已完成
-  章节收束。C14 是 `normal` chapter；下一小阶段
-  `C15_The_Documentation_Interlude` 是 P3 的 `PART closer`。
+- `P3_Statements_and_Syntax`：C10-C15 的正式主线、阶段测验、学习画像、阶段笔记
+  和最终收束均已完成；C15 是 P3 的 `PART closer`，阶段测验建议得分
+  `98 / 100`。
+- P3 capstone 结论：没有排期强制 pre-quiz capstone；路线图中的本地化批处理
+  工作流保持候选，`prompt_template_manager` 不被事后追认为 capstone。
+- 当前交接方向：`P4_Functions_and_Generators`。下一章为
+  `C16_Function_Basics`，角色经 P3 交接证据、来源索引与章级依赖共同确认为
+  `PART opener`；P4 正式教学尚未开始。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 启动模板：`P3_STATEMENTS_AND_SYNTAX_STARTUP_TEMPLATE.md` 已用于启动
-  `C10_Introducing_Python_Statements`；
-  `C11_ASSIGNMENTS_EXPRESSIONS_AND_PRINTS_STARTUP_TEMPLATE.md` 已用于推进 C11；
-  `C12_IF_TESTS_AND_SYNTAX_RULES_STARTUP_TEMPLATE.md` 已用于推进 C12；
-  `C13_WHILE_AND_FOR_LOOPS_STARTUP_TEMPLATE.md` 已用于推进 C13；
-  `C14_ITERATIONS_AND_COMPREHENSIONS_STARTUP_TEMPLATE.md` 已用于推进 C14。
-  C14 阶段测验建议得分 `99 / 100`，逐题审批、学习画像同步、阶段末笔记与
-  长期记录职责复核均已完成；现已生成
-  `C15_THE_DOCUMENTATION_INTERLUDE_STARTUP_TEMPLATE.md`。下一步应另开新会话，
-  只正式推进 `C15_The_Documentation_Interlude`。
+- P3 的 C10-C15 启动模板继续作为历史课程入口保留；下一章入口为
+  `C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md`。应另开新会话，只正式推进 C16，
+  不在 P3 收束会话中开始 P4 教学。
 
-## 9. 官方参考
+## 10. 官方参考
 
 - [Python Developer's Guide: Status of Python versions](https://devguide.python.org/versions/)
 - [Python Tutorial](https://docs.python.org/3/tutorial/)

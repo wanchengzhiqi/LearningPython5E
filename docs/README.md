@@ -25,6 +25,13 @@
   进入 `P3_Statements_and_Syntax / C15_The_Documentation_Interlude` 的新会话
   启动模板。它承接 C14 的 `99 / 100` 阶段测验与阶段末记录，明确 C15 的
   `PART closer` 角色、有限主线以及阶段项目候选的显式决策关卡，只正式推进 C15。
+- [`C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md`](C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md)：
+  进入 `P4_Functions_and_Generators / C16_Function_Basics` 的新会话启动模板。
+  它承接 P3 最终画像与收束结论，明确 C16 的 `PART opener` 角色，但只正式
+  推进 C16，不把整个 P4 变成一次会话任务。
+- [`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)：
+  保存用户提供的 P3-P8 目录来源摘录及其与定制路线的映射说明。它只负责来源
+  追溯，不是课程路线权威。
 - [`PYTHON_LEARNING_ROADMAP.md`](PYTHON_LEARNING_ROADMAP.md)：可动态调整的
   Python 后续学习路线图。每次跨越大阶段边界，或学习目标发生明显变化时，
   应结合最新学习画像复核。
