@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "input_count": 6,
+    "processed_count": 5,
+    "skipped_count": 1,
+    "error_count": 3,
+    "warning_count": 0,
+    "passed": false
+  },
+  "issues": [
+    {
+      "level": "ERROR",
+      "code": "missing_translation",
+      "line": 2,
+      "key": "ui.menu.quit",
+      "message": "Translation text is empty."
+    },
+    {
+      "level": "ERROR",
+      "code": "duplicate_key",
+      "line": 3,
+      "key": "ui.menu.start",
+      "message": "The normalized key has already appeared."
+    },
+    {
+      "level": "ERROR",
+      "code": "placeholder_mismatch",
+      "line": 4,
+      "key": "ui.inventory.count",
+      "message": "Source placeholders ['{count}'] do not match translation placeholders ['{amount}']."
+    }
+  ]
+}

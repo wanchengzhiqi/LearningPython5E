@@ -1,0 +1,49 @@
+--- p3_localization_quality_gate.py
++++ p3_localization_quality_gate_c16_main.py
+@@ -409,21 +409,28 @@
+         )
+ 
+ 
+-entries = build_entries(
+-    KEYS,
+-    SOURCE_TEXTS,
+-    TRANSLATIONS,
+-    ENABLED_FLAGS,
+-)
+-
+-report = validate_entries(
+-    entries,
+-    CONFIG,
+-)
+-
+-print_report(report)
+-
+-save_report(
+-    report,
+-    "p3_localization_report.json",
+-)
++def main():
++    """Run the localization quality-gate workflow."""
++
++    entries = build_entries(
++        KEYS,
++        SOURCE_TEXTS,
++        TRANSLATIONS,
++        ENABLED_FLAGS,
++    )
++
++    report = validate_entries(
++        entries,
++        CONFIG,
++    )
++
++    print_report(report)
++
++    save_report(
++        report,
++        "p3_localization_report.json",
++    )
++
++
++if __name__ == "__main__":
++    main()

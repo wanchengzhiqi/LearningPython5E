@@ -1,0 +1,46 @@
+--- p3_localization_quality_gate_c16_main.py
++++ p3_localization_quality_gate_c16_run_gate.py
+@@ -409,18 +409,36 @@
+         )
+ 
+ 
++def run_gate(
++    keys,
++    sources,
++    translations,
++    enabled_flags,
++    config,
++):
++    """Build and validate entries, then return a structured report."""
++
++    entries = build_entries(
++        keys,
++        sources,
++        translations,
++        enabled_flags,
++    )
++
++    return validate_entries(
++        entries,
++        config,
++    )
++
++
+ def main():
+-    """Run the localization quality-gate workflow."""
+-
+-    entries = build_entries(
++    """Run the localization quality-gate command workflow."""
++
++    report = run_gate(
+         KEYS,
+         SOURCE_TEXTS,
+         TRANSLATIONS,
+         ENABLED_FLAGS,
+-    )
+-
+-    report = validate_entries(
+-        entries,
+         CONFIG,
+     )
+ 
