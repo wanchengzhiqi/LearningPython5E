@@ -79,9 +79,11 @@ python --version
 
 - `P1_Getting_Started`：已完成。
 - `P2_Types_and_Operations`：已通过收束验收。
-- `P3_Statements_and_Syntax`：C10-C15 已完成最终收束；下一正式入口为
-  `P4_Functions_and_Generators / C16_Function_Basics`（`PART opener`），应从
-  [`docs/C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md`](docs/C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md)
+- `P3_Statements_and_Syntax`：C10-C15 已完成最终收束。
+- `P4_Functions_and_Generators`：已正式开始；`PART opener`
+  `C16_Function_Basics` 已完成最终收束。下一正式入口为 `C17_Scopes`
+  （`normal`），应从
+  [`docs/C17_SCOPES_STARTUP_TEMPLATE.md`](docs/C17_SCOPES_STARTUP_TEMPLATE.md)
   另开新会话。章级进度、阶段测验状态和新会话启动模板，以
   [`docs/PYTHON_LEARNING_ROADMAP.md`](docs/PYTHON_LEARNING_ROADMAP.md)、
   [`notes/Python_Learning_Profile.md`](notes/Python_Learning_Profile.md) 和

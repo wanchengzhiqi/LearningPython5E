@@ -1,6 +1,6 @@
 # C16 Function Basics
 
-This directory contains the preparation artifacts for
+This directory contains the validated learning and assessment artifacts for
 `P4_Functions_and_Generators / C16_Function_Basics`. The authoritative
 curriculum entry is
 [C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md](../../../docs/C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md).
@@ -12,16 +12,35 @@ curriculum entry is
   P4, and the function-object/call/return model is a shared dependency for
   C17-C21. This role is not inferred from the chapter number.
 - Preparation status: completed on 2026-07-27 after focused validation.
-- Next lifecycle phase: `mainline`; it has not started in this preparation
-  turn.
-- Default route: `preparation -> mainline -> quiz_authoring ->
-  quiz_answering -> quiz_review -> stage_note -> final_closeout`.
+- Closeout status: `final_closeout` completed on 2026-08-03; C16 is `closed`.
+- Completed route: `preparation -> mainline -> quiz_authoring ->
+  quiz_answering -> quiz_review -> stage_note -> final_closeout -> closed`.
 - Default mainline exit: `mainline 100% -> stage quiz`.
 - Capstone status: not scheduled. The candidate P4 function pipeline and
   benchmark report is not a required C16 artifact.
 
-These files prepare the chapter. They do not mean that the finite mainline has
-already been taught or completed.
+The finite mainline and all required chapter gates are complete. C17 teaching
+must begin from its own startup template in a fresh conversation.
+
+## Completion Evidence
+
+- The five numbered experiments and finite mainline were completed and
+  validated with the repository `.venv-py314` / Python 3.14.5 environment.
+- The stage quiz was reviewed question by question: `11 / 11` questions,
+  stable score `99.75 / 100`. The quiz validator confirmed 6 sections, 11
+  questions, and 41 compilable Python code blocks.
+- The final review judgment was synchronized to
+  `notes/Python_Learning_Profile.md` without changing the stable score or the
+  judgment that function basics reached an excellent level.
+- The C16 stage-end note is recorded under `## 18` in
+  [`notes/P4_Functions_and_Generators.md`](../../../notes/P4_Functions_and_Generators.md).
+- No physical-book or later-topic follow-up is required for closure. Optional
+  follow-up did not occur and does not create replacement work.
+- No pre-quiz capstone was scheduled. Roadmap candidates and adjacent
+  engineering artifacts are not retroactively treated as completed gates.
+- The single next-chapter entry is
+  [`docs/C17_SCOPES_STARTUP_TEMPLATE.md`](../../../docs/C17_SCOPES_STARTUP_TEMPLATE.md);
+  C17 must start with preparation in a fresh conversation.
 
 ## P3 Handoff and P4 Boundary
 
@@ -123,12 +142,20 @@ The numbered experiments are self-contained and use synthetic localization
 data. They do not connect to a database or invoke initialization, migration,
 CRUD, CLI, or GUI paths.
 
+Contract cards, refactor patches, and verification records stored beside the
+numbered experiments are optional engineering background. They are not formal
+numbered mainline artifacts, a C16 capstone, or C17 curriculum authority. Some
+background verification records retain their original Python 3.13.5 evidence
+scope and are not relabeled as formal Python 3.14.5 proof.
+
 ## Safety
 
 - No experiment reads or operates on `tests/`.
 - No real file, database, network, CLI, or GUI side effect is performed.
 - `StringIO` is an in-memory teaching substitute, not proof of real persistence
   behavior.
-- Preparation creates no P4 capstone, stage quiz, P4 stage note, C17-C21
-  practice files, or repository-level shared package.
+- Initial preparation created no P4 capstone, stage quiz, P4 stage note,
+  C17-C21 practice files, or repository-level shared package. Later lifecycle
+  gates produced the validated C16 quiz and P4 stage note; no C17 practice
+  artifact was created during C16 closeout.
 - Each numbered file remains an independent learning snapshot.

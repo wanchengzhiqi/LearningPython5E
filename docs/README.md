@@ -29,6 +29,10 @@
   进入 `P4_Functions_and_Generators / C16_Function_Basics` 的新会话启动模板。
   它承接 P3 最终画像与收束结论，明确 C16 的 `PART opener` 角色，但只正式
   推进 C16，不把整个 P4 变成一次会话任务。
+- [`C17_SCOPES_STARTUP_TEMPLATE.md`](C17_SCOPES_STARTUP_TEMPLATE.md)：
+  进入 `P4_Functions_and_Generators / C17_Scopes` 的新会话启动模板。它承接
+  C16 的 `99.75 / 100` 阶段测验、最终画像与阶段末笔记，明确 C17 的 `normal`
+  角色、有限作用域主线和未排期 capstone 边界，只正式推进 C17。
 - [`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)：
   保存用户提供的 P3-P8 目录来源摘录及其与定制路线的映射说明。它只负责来源
   追溯，不是课程路线权威。

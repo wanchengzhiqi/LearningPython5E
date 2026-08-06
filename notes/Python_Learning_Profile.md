@@ -13,20 +13,20 @@
 
 ## 1. 当前能力快照
 
-更新时间：2026-08-01
+更新时间：2026-08-03
 
 当前阶段位置：
 
-- 当前大阶段：`P4_Functions_and_Generators`；当前章节是其 `PART opener`
-  `C16_Function_Basics`。
+- 当前大阶段：`P4_Functions_and_Generators`；其 `PART opener`
+  `C16_Function_Basics` 已完成最终收束，下一章节是 `normal` 角色的 `C17_Scopes`。
 - 已完成大阶段：`P1_Getting_Started`、`P2_Types_and_Operations`、
   `P3_Statements_and_Syntax`。
-- 已完成小阶段：`C10_Introducing_Python_Statements`，阶段小测建议得分 `96 / 100`；`C11_Assignments_Expressions_and_Prints`，阶段测验建议得分 `100 / 100`；`C12_if_Tests_and_Syntax_Rules`，阶段测验建议得分 `100 / 100`；`C13_while_and_for_Loops`，阶段测验建议得分 `99 / 100`；`C14_Iterations_and_Comprehensions`，阶段测验建议得分 `99 / 100`；`C15_The_Documentation_Interlude`，阶段测验建议得分 `98 / 100`。
-- 当前状态：C16 preparation、有限正式主线、阶段测验生成与 `11 / 11` 题逐题审批
-  已完成；阶段测验建议得分 `99.75 / 100`，本次学习画像同步已完成。C16 没有排期
-  pre-quiz capstone；路线图候选项目没有被追认为已完成关卡。
-- 下一生命周期阶段：为 C16 生成 `stage_note`；之后仍需完成 `final_closeout`，当前
-  不提前开始 C17。
+- 已完成小阶段：`C10_Introducing_Python_Statements`，阶段小测建议得分 `96 / 100`；`C11_Assignments_Expressions_and_Prints`，阶段测验建议得分 `100 / 100`；`C12_if_Tests_and_Syntax_Rules`，阶段测验建议得分 `100 / 100`；`C13_while_and_for_Loops`，阶段测验建议得分 `99 / 100`；`C14_Iterations_and_Comprehensions`，阶段测验建议得分 `99 / 100`；`C15_The_Documentation_Interlude`，阶段测验建议得分 `98 / 100`；`C16_Function_Basics`，阶段测验建议得分 `99.75 / 100` 并已完成最终收束。
+- 当前状态：C16 preparation、有限正式主线、阶段测验生成、`11 / 11` 题逐题审批、
+  学习画像同步、阶段末笔记与 `final_closeout` 均已完成，生命周期为 `closed`。C16
+  没有排期 pre-quiz capstone；路线图候选项目没有被追认为已完成关卡。
+- 下一生命周期动作：另开新会话，从
+  `docs/C17_SCOPES_STARTUP_TEMPLATE.md` 执行 C17 preparation；本次不开始 C17 教学。
 
 当前综合判断：
 
@@ -615,6 +615,25 @@ P3 的阶段末笔记、长期记录职责审计、P4 章级路线协调和 C16 
 
 ---
 
+### 2026-08-03：C16 最终收束与 C17 交接完成
+
+结论：
+
+`C16_Function_Basics` 的阶段末笔记、长期记录职责审计和唯一 C17 新会话入口均已
+完成，生命周期已标记为 `closed`。本次没有新增学习证据，因此阶段测验稳定得分继续
+保持 `99.75 / 100`，能力判断继续保持“中级入门前段已经稳固，函数基础达到优秀”。
+
+状态证据：
+
+- `notes/P4_Functions_and_Generators.md` 已包含完整 C16 阶段末笔记；
+- C16 没有排期 pre-quiz capstone，路线图候选项目未被事后升级为完成关卡；
+- 实体书问答和后续专题属于 optional follow-up，未发生也不阻塞收束；
+- 下一章唯一身份为 `C17_Scopes`，正式标题“名字解析与闭包入口”，章节角色
+  `normal`，入口为 `docs/C17_SCOPES_STARTUP_TEMPLATE.md`；
+- 下一步是另开新会话执行 C17 preparation，不在本次 C16 收束中提前教学作用域。
+
+---
+
 ## 4. 高频误区观察表
 
 | 高频误区 | 当前状态 | 修正规则 |
@@ -646,15 +665,15 @@ P3 的阶段末笔记、长期记录职责审计、P4 章级路线协调和 C16 
 
 ---
 
-## 5. C16 后续收束与下一阶段学习画像关注点
+## 5. C16 已关闭后的 C17 学习画像关注点
 
-C16 阶段测验审批和学习画像同步已经完成，当前唯一生命周期动作是 `stage_note`；
-之后仍需执行 `final_closeout`。按现有路线，下一教学章节是 `C17_Scopes`，但本次不
-提前开始教学或生成其工件：
+C16 已完成阶段测验审批、画像同步、阶段笔记和最终收束。下一原子动作是在新会话中
+读取 `docs/C17_SCOPES_STARTUP_TEMPLATE.md` 并执行 C17 preparation；当前会话不
+提前开始作用域教学：
 
-1. C16 主干无需补救；阶段笔记应保留函数对象、绑定、调用/返回/异常时间线和合同
-   分层，不把不扣分精修点写成主干缺失。
-2. C17 中继续区分函数调用内的局部名字与完整名字解析规则，不把“形参绑定对象引用”
+1. C16 主干无需补救；C17 应直接承接函数对象、绑定、调用/返回/异常时间线和合同
+   分层，不重复讲授上一章，也不把不扣分精修点写成主干缺失。
+2. C17 中要继续区分函数调用内的局部名字与完整名字解析规则，不把“形参绑定对象引用”
    自动扩大为已掌握 LEGB、`global`、`nonlocal` 或闭包。
 3. 描述输出函数时区分“调用接收器协议”“当前内存缓冲区状态”“用户可见显示”和
    “外部持久化”；多次写入及异常前副作用不具备自动事务回滚。
@@ -696,4 +715,4 @@ C16 阶段测验审批和学习画像同步已经完成，当前唯一生命周�
 
 你已经完成 P1-P3 收束，并以 `99.75 / 100` 通过 P4 `PART opener`
 `C16_Function_Basics` 的阶段测验；当前中级入门前段已经稳固、函数基础达到优秀，
-下一步是完成 C16 `stage_note`，尚不开始 C17。
+C16 已完成最终收束。下一步是在新会话中执行 `C17_Scopes` preparation。

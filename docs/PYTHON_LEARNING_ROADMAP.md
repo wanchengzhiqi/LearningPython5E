@@ -1,6 +1,6 @@
 # Python Learning Roadmap
 
-更新时间：2026-07-26
+更新时间：2026-08-03
 
 ## 1. 定位
 
@@ -101,9 +101,9 @@ capstone。C15 实际按 `mainline -> stage quiz` 完成；
 `prompt_template_manager` 继续作为 P3 支持性工程背景，不被事后追认为 capstone。
 这是 P3 的历史完成结论，后续不得因为 C15 是 `PART closer` 而补造项目关卡。
 
-## 6. 下一大阶段：P4 章级路线
+## 6. 当前大阶段：P4 章级路线
 
-`P4_Functions_and_Generators` 是 P3 收束后的下一大阶段。用户当初提供的 P3-P8
+`P4_Functions_and_Generators` 是 P3 收束后的当前大阶段。用户当初提供的 P3-P8
 目录摘录已保存到
 [`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)；
 该文件只负责来源追溯，本路线图仍是定制课程的权威记录。
@@ -144,6 +144,9 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：可观察基本签名、docstring 和注解元数据，但继续强调注解不自动执行
   类型验证；系统注解设计留给 C19。
 - **阶段检查点候选**：小型纯函数拆分与调用/返回轨迹实验，不是 P4 capstone。
+- **完成状态**：已于 2026-08-03 完成最终收束并标记为 `closed`；阶段测验
+  `11 / 11` 题逐题审批完成，稳定得分 `99.75 / 100`。本章没有排期 pre-quiz
+  capstone，学习画像与 P4 阶段末笔记均已同步。
 
 ### 6.2 `C17_Scopes`：名字解析与闭包入口
 
@@ -154,6 +157,9 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：优先显式传递依赖，避免隐式全局可变状态；运行期命名空间观察仍须
   保留 C15 的“内省可能执行代码”边界。
 - **阶段检查点候选**：作用域追踪器或不依赖全局可变状态的配置函数。
+- **当前入口**：C16 关闭后的唯一下一章入口为
+  [`C17_SCOPES_STARTUP_TEMPLATE.md`](C17_SCOPES_STARTUP_TEMPLATE.md)；C17 应在
+  新会话从 preparation 开始，候选检查点不构成已排期 capstone。
 
 ### 6.3 `C18_Arguments`：调用合同与参数绑定
 
@@ -245,15 +251,20 @@ P4 仍按一个会话一个 `CHAPTER` 推进。本节只冻结 C16-C21 的章级
   `98 / 100`。
 - P3 capstone 结论：没有排期强制 pre-quiz capstone；路线图中的本地化批处理
   工作流保持候选，`prompt_template_manager` 不被事后追认为 capstone。
-- 当前交接方向：`P4_Functions_and_Generators`。下一章为
-  `C16_Function_Basics`，角色经 P3 交接证据、来源索引与章级依赖共同确认为
-  `PART opener`；P4 正式教学尚未开始。
+- `P4_Functions_and_Generators`：已经正式开始。其 `PART opener`
+  `C16_Function_Basics` 的正式主线、阶段测验、逐题审批、学习画像、阶段笔记和
+  最终收束均已完成；稳定得分 `99.75 / 100`，生命周期状态为 `closed`。
+- C16 capstone 结论：权威启动模板未安排 pre-quiz capstone；小型纯函数拆分、
+  函数管线和实验/报告候选均未被事后追认为已完成关卡。
+- 当前交接方向：`C17_Scopes`，正式标题“名字解析与闭包入口”，章节角色为
+  `normal`。唯一下一章入口为
+  [`C17_SCOPES_STARTUP_TEMPLATE.md`](C17_SCOPES_STARTUP_TEMPLATE.md)；应另开
+  新会话从 preparation 开始，只正式推进 C17。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 的 C10-C15 启动模板继续作为历史课程入口保留；下一章入口为
-  `C16_FUNCTION_BASICS_STARTUP_TEMPLATE.md`。应另开新会话，只正式推进 C16，
-  不在 P3 收束会话中开始 P4 教学。
+- P3 的 C10-C15 与 P4 的 C16 启动模板继续作为历史课程入口保留；它们不替代
+  当前 C17 模板，也不因章节关闭而改写为完成报告。
 
 ## 10. 官方参考
 
