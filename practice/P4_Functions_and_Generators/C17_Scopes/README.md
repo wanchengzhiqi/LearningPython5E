@@ -1,8 +1,8 @@
 # C17 Scopes
 
-This directory contains the prepared learning artifacts for
+This directory contains the completed and validated learning artifacts for
 `P4_Functions_and_Generators / C17_Scopes`. The authoritative curriculum and
-pacing entry is
+pacing entry remains the historical
 [C17_SCOPES_STARTUP_TEMPLATE.md](../../../docs/C17_SCOPES_STARTUP_TEMPLATE.md).
 
 ## Role and Route
@@ -13,16 +13,27 @@ pacing entry is
   therefore neither opens nor closes the PART; this role is not inferred from
   the chapter number.
 - Preparation status: completed on 2026-08-03 after focused validation.
-- Current lifecycle phase: `preparation` is complete; the next phase is
-  `mainline`.
-- Planned route: `preparation -> mainline -> quiz_authoring ->
-  quiz_answering -> quiz_review -> stage_note -> final_closeout`.
+- Current lifecycle phase: `closed` since 2026-08-12.
+- Completed route: `preparation -> mainline -> quiz_authoring ->
+  quiz_answering -> quiz_review -> stage_note -> final_closeout -> closed`.
 - Default mainline exit: `mainline 100% -> stage quiz`.
 - Capstone status: not scheduled. A scope tracer or configuration function is
   only a roadmap candidate, not a required pre-quiz project.
 
-This preparation creates runnable evidence for the finite C17 map. It does not
-start formal teaching, create a quiz or note, or advance another chapter.
+Completion evidence:
+
+- Six numbered scripts provide the independently runnable evidence for the
+  finite C17 map.
+- [stage_quiz_scopes.md](stage_quiz_scopes.md) has `11 / 11` questions
+  individually reviewed and a stable score of `99.25 / 100`.
+- The final learning profile and C17 stage note are synchronized; optional
+  follow-up material remains non-blocking and does not change the score.
+- No capstone was scheduled or created.
+- The sole next-chapter entry is
+  [C18_ARGUMENTS_STARTUP_TEMPLATE.md](../../../docs/C18_ARGUMENTS_STARTUP_TEMPLATE.md);
+  C18 preparation belongs in a new session.
+- Unnumbered practice files are retained as optional learning traces, not as
+  required formal evidence.
 
 ## C16 Handoff and C17 Boundary
 
@@ -145,7 +156,7 @@ remains observable without database, CLI, or GUI behavior.
 - `locals()` and `globals()` are used only for selected read observations;
   the scripts do not write through their returned mappings or print an entire
   namespace.
-- Preparation creates no capstone, quiz, stage note, C18-C21 practice file, or
-  repository-level shared package.
+- This chapter creates no capstone, C18-C21 practice file, or repository-level
+  shared package.
 - Every numbered file keeps its own helpers and entry guard so it can run
   independently.

@@ -157,9 +157,9 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：优先显式传递依赖，避免隐式全局可变状态；运行期命名空间观察仍须
   保留 C15 的“内省可能执行代码”边界。
 - **阶段检查点候选**：作用域追踪器或不依赖全局可变状态的配置函数。
-- **当前入口**：C16 关闭后的唯一下一章入口为
-  [`C17_SCOPES_STARTUP_TEMPLATE.md`](C17_SCOPES_STARTUP_TEMPLATE.md)；C17 应在
-  新会话从 preparation 开始，候选检查点不构成已排期 capstone。
+- **完成状态**：已于 2026-08-12 完成最终收束并标记为 `closed`；阶段测验
+  `11 / 11` 题逐题审批完成，稳定得分 `99.25 / 100`。本章没有排期 pre-quiz
+  capstone，学习画像与 P4 阶段末笔记均已同步；可选 follow-up 不改变完成分母。
 
 ### 6.3 `C18_Arguments`：调用合同与参数绑定
 
@@ -170,6 +170,9 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：系统加入 `/` positional-only 和 `*` keyword-only；可用
   `Signature.bind()` 辅助观察，但不把呈现签名或绑定成功提升为完整行为保证。
 - **阶段检查点候选**：带 keyword-only 控制项的本地化审计函数与参数绑定矩阵。
+- **当前入口**：C17 关闭后的唯一下一章入口为
+  [`C18_ARGUMENTS_STARTUP_TEMPLATE.md`](C18_ARGUMENTS_STARTUP_TEMPLATE.md)；C18
+  应另开会话从 preparation 开始，候选检查点不构成已排期 capstone。
 
 ### 6.4 `C19_Advanced_Function_Topics`：组合、闭包、递归与注解
 
@@ -256,15 +259,20 @@ P4 仍按一个会话一个 `CHAPTER` 推进。本节只冻结 C16-C21 的章级
   最终收束均已完成；稳定得分 `99.75 / 100`，生命周期状态为 `closed`。
 - C16 capstone 结论：权威启动模板未安排 pre-quiz capstone；小型纯函数拆分、
   函数管线和实验/报告候选均未被事后追认为已完成关卡。
-- 当前交接方向：`C17_Scopes`，正式标题“名字解析与闭包入口”，章节角色为
+- `C17_Scopes` 的正式主线、阶段测验、`11 / 11` 题逐题审批、学习画像、
+  阶段末笔记、可选 follow-up 审核和最终收束均已完成；稳定得分
+  `99.25 / 100`，生命周期状态为 `closed`。
+- C17 capstone 结论：权威启动模板未安排 pre-quiz capstone；作用域追踪器和配置
+  函数候选均未被事后追认为已完成关卡。
+- 当前交接方向：`C18_Arguments`，正式标题“调用合同与参数绑定”，章节角色为
   `normal`。唯一下一章入口为
-  [`C17_SCOPES_STARTUP_TEMPLATE.md`](C17_SCOPES_STARTUP_TEMPLATE.md)；应另开
-  新会话从 preparation 开始，只正式推进 C17。
+  [`C18_ARGUMENTS_STARTUP_TEMPLATE.md`](C18_ARGUMENTS_STARTUP_TEMPLATE.md)；
+  应另开新会话从 preparation 开始，只正式推进 C18。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 的 C10-C15 与 P4 的 C16 启动模板继续作为历史课程入口保留；它们不替代
-  当前 C17 模板，也不因章节关闭而改写为完成报告。
+- P3 的 C10-C15 与 P4 的 C16-C17 启动模板继续作为历史课程入口保留；它们不替代
+  当前 C18 模板，也不因章节关闭而改写为完成报告。
 
 ## 10. 官方参考
 
