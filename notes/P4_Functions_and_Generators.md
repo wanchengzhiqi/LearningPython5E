@@ -811,7 +811,7 @@ C17 已把 C16 的“本次调用局部绑定”扩展成完整而有限的名�
 - **阶段测验**：`stage_quiz_arguments.md` 已逐题审批 11/11 题，稳定总分为 **99.25 / 100**；扣分点已经转化为本节的精度修复。
 - **学习画像**：`notes/Python_Learning_Profile.md` 中的 C18 末评证据表明，参数调用合同主线已达到优秀水平；当前风险主要是阶段语言、引用图方向和函数体内重绑定的表达精度，而不是机制性缺口。
 - **capstone 关卡**：active-gate authority 没有为 C18 排期测验前 capstone；路线图中的项目候选不算已排期项目，因此本章没有需要补做或冒充完成的 capstone。
-- **当前生命周期**：`mainline`、`quiz_authoring`、`quiz_answering` 与 `quiz_review` 均已完成，阶段末笔记在本节完成；下一关是 `final_closeout`。此处不提前把 C18 标为 `closed`，也不创建或启动 C19。
+- **生命周期状态**：preparation、有限正式主线、测验生成、作答、批改、学习画像同步、阶段末笔记和 `final_closeout` 均已完成；C18 于 2026-08-27 标记为 `closed`。下一章从 `docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md` 另开新会话，不在这里提前开始 C19。
 
 本章承接 C16 已建立的“实参表达式产生对象、形参成为本次调用的局部名字、绑定不复制对象”，但把它扩展成一套完整而有限的调用合同。C17 的 LEGB、闭包和状态所有者只作为既有基础，不在这里重复。
 
@@ -1432,4 +1432,4 @@ bind      →  对该签名的映射证据
 工程的核心：显式输入、清楚所有权、稳定失败边界与匹配结论强度的证据，比宽泛签名更可靠。
 ```
 
-C18 已完成正式主线、阶段测验审批和阶段末笔记；本章角色仍是 `normal`，且没有已排期的测验前 capstone。当前生命周期停在 `stage_note` 完成后的 `final_closeout` 入口，尚未标记 `closed`。最终收束应另按 closeout ledger 核验本章耐久记录和下一章身份，不在本节提前启动 C19。
+C18 已完成正式主线、阶段测验审批、学习画像同步、阶段末笔记与最终收束，生命周期为 `closed`；本章角色仍是 `normal`，且没有已排期的测验前 capstone。下一章唯一入口是 `docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`，应另开新会话执行 C19 preparation，不在本节提前教学高级函数主题。

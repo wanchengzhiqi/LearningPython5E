@@ -1,6 +1,6 @@
 # Python Learning Roadmap
 
-更新时间：2026-08-03
+更新时间：2026-08-27
 
 ## 1. 定位
 
@@ -170,9 +170,13 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：系统加入 `/` positional-only 和 `*` keyword-only；可用
   `Signature.bind()` 辅助观察，但不把呈现签名或绑定成功提升为完整行为保证。
 - **阶段检查点候选**：带 keyword-only 控制项的本地化审计函数与参数绑定矩阵。
-- **当前入口**：C17 关闭后的唯一下一章入口为
-  [`C18_ARGUMENTS_STARTUP_TEMPLATE.md`](C18_ARGUMENTS_STARTUP_TEMPLATE.md)；C18
-  应另开会话从 preparation 开始，候选检查点不构成已排期 capstone。
+- **完成状态**：已于 2026-08-27 完成最终收束并标记为 `closed`；阶段测验
+  `11 / 11` 题逐题审批完成，稳定得分 `99.25 / 100`。本章没有排期 pre-quiz
+  capstone，学习画像与 P4 阶段末笔记均已同步；可选 follow-up 未发生也不改变
+  完成分母。
+- **下一交接**：唯一下一章为 `C19_Advanced_Function_Topics`，入口为
+  [`C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`](C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md)；
+  应另开新会话从 preparation 开始，不在 C18 收束中提前教学。
 
 ### 6.4 `C19_Advanced_Function_Topics`：组合、闭包、递归与注解
 
@@ -264,15 +268,21 @@ P4 仍按一个会话一个 `CHAPTER` 推进。本节只冻结 C16-C21 的章级
   `99.25 / 100`，生命周期状态为 `closed`。
 - C17 capstone 结论：权威启动模板未安排 pre-quiz capstone；作用域追踪器和配置
   函数候选均未被事后追认为已完成关卡。
-- 当前交接方向：`C18_Arguments`，正式标题“调用合同与参数绑定”，章节角色为
-  `normal`。唯一下一章入口为
-  [`C18_ARGUMENTS_STARTUP_TEMPLATE.md`](C18_ARGUMENTS_STARTUP_TEMPLATE.md)；
-  应另开新会话从 preparation 开始，只正式推进 C18。
+- `C18_Arguments` 的正式主线、阶段测验、`11 / 11` 题逐题审批、学习画像、
+  阶段末笔记和最终收束均已完成；稳定得分 `99.25 / 100`，生命周期状态为
+  `closed`。
+- C18 capstone 结论：权威启动模板未安排 pre-quiz capstone；参数绑定矩阵、
+  本地化审计函数和 P4 函数管线候选均未被事后追认为已完成关卡。
+- 当前交接方向：`C19_Advanced_Function_Topics`，正式标题“组合、闭包、递归与
+  注解”，章节角色为 `normal`。唯一下一章入口为
+  [`C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`](C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md)；
+  应另开新会话从 preparation 开始，只正式推进 C19。当前模板未安排 pre-quiz
+  capstone，路线图中的规则注册表或本地化转换函数管线仍只是候选。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 的 C10-C15 与 P4 的 C16-C17 启动模板继续作为历史课程入口保留；它们不替代
-  当前 C18 模板，也不因章节关闭而改写为完成报告。
+- P3 的 C10-C15 与 P4 的 C16-C18 启动模板继续作为历史课程入口保留；它们不替代
+  当前 C19 模板，也不因章节关闭而改写为完成报告。
 
 ## 10. 官方参考
 

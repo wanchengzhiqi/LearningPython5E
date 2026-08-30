@@ -37,6 +37,11 @@
   进入 `P4_Functions_and_Generators / C18_Arguments` 的唯一新会话启动模板。
   它承接 C17 的 `99.25 / 100` 稳定测验结论、最终画像与阶段末笔记，明确 C18
   的 `normal` 角色、有限参数绑定主线和未排期 capstone 边界，只正式推进 C18。
+- [`C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`](C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md)：
+  进入 `P4_Functions_and_Generators / C19_Advanced_Function_Topics` 的唯一
+  新会话启动模板。它承接 C18 的 `99.25 / 100` 稳定测验结论、最终画像与阶段末
+  笔记，明确 C19 的 `normal` 角色、有限高级函数主线和未排期 capstone 边界，
+  只正式推进 C19。
 - [`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)：
   保存用户提供的 P3-P8 目录来源摘录及其与定制路线的映射说明。它只负责来源
   追溯，不是课程路线权威。
