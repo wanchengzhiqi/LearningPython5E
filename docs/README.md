@@ -42,6 +42,11 @@
   新会话启动模板。它承接 C18 的 `99.25 / 100` 稳定测验结论、最终画像与阶段末
   笔记，明确 C19 的 `normal` 角色、有限高级函数主线和未排期 capstone 边界，
   只正式推进 C19。
+- [`C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md`](C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md)：
+  进入 `P4_Functions_and_Generators / C20_Comprehensions_Revisited_and_Generators`
+  的唯一新会话启动模板，正式标题“生成器函数状态”，角色 `normal`。承接 C19
+  的 `100 / 100` 稳定结论、最终画像和阶段末笔记；只准备并推进 C20，
+  不重复 C14 基础，不把流式管线候选视为已排期 capstone。
 - [`LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md`](LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md)：
   保存用户提供的 P3-P8 目录来源摘录及其与定制路线的映射说明。它只负责来源
   追溯，不是课程路线权威。

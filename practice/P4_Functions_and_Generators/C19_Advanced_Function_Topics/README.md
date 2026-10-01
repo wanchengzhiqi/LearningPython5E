@@ -1,6 +1,6 @@
 # C19 Advanced Function Topics
 
-This directory contains the prepared learning artifacts for
+This directory contains the formal learning artifacts and completion record for
 `P4_Functions_and_Generators / C19_Advanced_Function_Topics`. The authoritative
 curriculum and pacing entry is
 [C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md](../../../docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md).
@@ -14,10 +14,11 @@ curriculum and pacing entry is
   opens nor closes the PART. This role comes from the durable route, startup
   template, and neighboring dependencies rather than the chapter number.
 - Preparation status: completed on 2026-08-27 after focused validation.
-- Lifecycle cursor: `preparation` is complete; `mainline` is the next phase and
-  has not started in this preparation turn.
-- Planned route: `preparation -> mainline -> quiz_authoring ->
-  quiz_answering -> quiz_review -> stage_note -> final_closeout`.
+- Lifecycle status: `closed` on 2026-10-01. Mainline, quiz review, profile,
+  stage note, durable-record audit and the single C20 template are validated.
+  See the completion ledger below; do not restart this chapter.
+- Completed route: `preparation -> mainline -> quiz_authoring ->
+  quiz_answering -> quiz_review -> stage_note -> final_closeout -> closed`.
 - Default mainline exit: `mainline 100% -> stage quiz`.
 - Capstone status: not scheduled. A composable rule registry or localization
   transformation pipeline remains a candidate checkpoint, not a required
@@ -189,6 +190,81 @@ complete business correctness of a real callback system.
   on version-specific full messages.
 - Preparation created no capstone, quiz, stage note, C20-C21 practice file,
   repository-level shared package, decorator framework, generator-function or
-  `yield` experiment, or benchmark.
+  `yield` experiment, or benchmark. Later phases added the reviewed quiz and
+  stage note; final closeout created only the C20 startup template, not C20
+  practice artifacts.
 - Every numbered file keeps its own helpers and entry guard so it can run
   independently.
+
+## Final Closeout Ledger
+
+- Audit date: 2026-10-01.
+- Lifecycle phase: `closed` (2026-10-01), after the ledger and target template
+  passed validation. Optional follow-up does not reopen this terminal state.
+- Stable assessment: A1-F1, `11 / 11` reviewed, `100 / 100`. The final
+  profile judgment remains unchanged; closeout adds no new learning evidence.
+- Stage note: `notes/P4_Functions_and_Generators.md`, sections 21.0-21.14,
+  written and verified on 2026-09-26.
+- Active-gate decision: the C19 startup template schedules no pre-quiz
+  capstone. F1 is a quiz interface exercise, not a project gate.
+  Optional book Q&A and later topics do not block closeout.
+- Confirmed next chapter: `P4_Functions_and_Generators /
+  C20_Comprehensions_Revisited_and_Generators`.
+- Formal title: 生成器函数状态. Role: `normal`, from roadmap section 6.5,
+  the C19-C20-C21 dependency chain, and C21's explicit PART-closer role.
+- Dependencies: C14 iteration/consumption plus C16-C19 function, scope,
+  argument, closure, and execution-time models.
+- Single target: `D:\MySoftwareDownload\PythonPractice\LearningPython5E\docs\C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md`.
+- Next-template status: `validated`; the target did not exist at audit entry.
+  Exactly one template exists at the confirmed path; no C20 practice directory
+  or teaching was started.
+- Next atomic action: open a fresh conversation with the
+  [single C20 startup template](../../../docs/C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md)
+  and perform C20 preparation. No C20 mainline teaching occurred here.
+
+Ledger paths below are repository-relative.
+
+| Durable record | Status | Evidence / remaining action |
+| --- | --- | --- |
+| `README.md` | validated | Stale chapter mirror removed; low-churn reader links and Markdown checked |
+| `AGENTS.md` | audited-unchanged | No durable safety, directory, environment, or workflow change |
+| `docs/README.md` | validated | Exactly one C20 entry; target exists and identity agrees |
+| `docs/PYTHON_LEARNING_ROADMAP.md` | validated | C19 evidence and unique C20 identity/title/role/path checked |
+| `notes/Python_Learning_Profile.md` | validated | Lifecycle/handoff synchronized; stable judgment, matrix, history and precision table preserved |
+| `notes/P4_Functions_and_Generators.md` | validated | Only C19 status/handoff changed; 15 headings and 8 runnable examples checked |
+| `practice/P4_Functions_and_Generators/C19_Advanced_Function_Topics/README.md` | validated | Chapter ledger, gate evidence, links and Markdown checked |
+| `docs/C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md` | validated | Single target, complete template, finite scope and latest protocol checked |
+| `docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md` | audited-unchanged | Preserve historical curriculum and gate authority |
+| `docs/LEARNING_PYTHON_5E_REMAINING_OUTLINE_SOURCE.md` | audited-unchanged | Existing C20 normalization and source mapping already agree |
+| `docs/PYTHON_ENVIRONMENT_MIGRATION_PLAN.md` | audited-unchanged | Python 3.14.5 / .venv-py314 verified; no migration decision |
+| `projects/P3_Statements_and_Syntax/prompt_template_manager/README.md` | audited-unchanged | Static background only; no usage, dependency, architecture, or limitation change |
+| `practice/P4_Functions_and_Generators/C19_Advanced_Function_Topics/stage_quiz_advanced_function_topics.md` | audited-unchanged | 11-item review, stable 100/100, final findings/profile block preserved |
+
+Validation evidence (2026-10-01, Python 3.14.5):
+
+- Seven changed/new Markdown files pass UTF-8, final-newline, trailing-space,
+  heading/fence and intended-content checks; scoped `git diff --check` passes.
+- C20 identity, title, role, required template fields, single-target existence,
+  links, finite scope and latest teaching protocol are verified independently.
+- Quiz review ledger and detail scores agree: 11 questions; section totals
+  12 + 18 + 24 + 16 + 14 + 16 = 100. Quiz bytes are unchanged.
+- All eight C19 note Python examples compile and pass their assertions in
+  memory. The original knowledge content and profile judgment are preserved.
+- Nine protected file hashes and both sumtree index entries match the entry
+  baseline. No unrelated dirty content has been staged or cleaned up.
+- Two patch-context mismatches were repaired after explicit user authorization,
+  using full lines and ordered patch blocks through the same approved edit
+  chain; no fallback was used.
+
+The quiz's historical strict-validator limitation remains documented in its
+review: nine contextual Python fragments and six Markdown hard breaks prevent
+full-paper strict validation. This is not regraded, cleaned up, or reported
+as a full-paper pass during closeout.
+
+Dirty-worktree boundary at entry: the P4 note, profile, and answered/reviewed
+quiz were already modified. `sumtree.py` and `sumtree_etc.py` each had staged
+additions plus unstaged edits (`AM`); the supplementary C19 notes file was
+untracked. None is cleanup work. Preserve quiz bytes, both sumtree files and
+their index entries, and the supplementary file. No staging, commits, deletes,
+user-level Codex memory synchronization, or `tests/` operations are part of
+this closeout.

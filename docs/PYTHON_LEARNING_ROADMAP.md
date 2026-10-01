@@ -1,6 +1,6 @@
 # Python Learning Roadmap
 
-更新时间：2026-08-27
+更新时间：2026-10-01
 
 ## 1. 定位
 
@@ -187,6 +187,12 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：首次系统加入参数/返回注解和 `Callable` 基础，但不把注解当成
   运行期强制；装饰器只作入口预告，系统学习仍留给 P8/C39。
 - **阶段检查点候选**：可组合规则注册表或本地化转换函数管线。
+- **完成状态（2026-10-01）**：正式主线、A1-F1 共 `11 / 11` 题逐题审批、
+  画像同步、21.0-21.14 阶段末笔记与最终收束均已完成，生命周期为 `closed`。
+  长期记录及唯一 C20 模板已验证；稳定得分保持 `100 / 100`。本次没有新增学习
+  证据，不改变既定能力判断。
+- **关卡结论**：启动模板没有安排 pre-quiz capstone；注册表/管线保持候选，F1
+  不被追认为项目。实体书问答和后续专题可选，不阻塞收束。
 
 ### 6.5 `C20_Comprehensions_Revisited_and_Generators`：生成器函数状态
 
@@ -197,6 +203,16 @@ C16 的 `PART opener` 角色不是从编号猜测而来：C15 已明确关闭 P3
 - **现代补充**：`yield from` 作为小型委托机制；`send()` 等协程式接口只列为可选
   拓展，不提前转入异步或并发教学。
 - **阶段检查点候选**：流式本地化记录处理管线及其与物化方案的语义对照。
+- **唯一交接身份（2026-10-01 确认）**：正式目录身份为
+  `C20_Comprehensions_Revisited_and_Generators`，正式标题“生成器函数状态”，
+  章节角色 `normal`；依据本表、C14/C16-C19 前置和 C21 的 `PART closer` 定位。
+- **唯一启动模板目标**：
+  `D:\MySoftwareDownload\PythonPractice\LearningPython5E\docs\C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md`，
+  仓库入口为
+  [`C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md`](C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md)。
+- **交接边界**：C19 关闭后另开新会话，从 C20 preparation 开始；未排期 C20
+  pre-quiz capstone，流式管线仍只是候选。C20 新模板负责其有限课程与关卡，
+  本次不预建 C20 练习、不开始教学，也不提前关闭 P4。
 
 ### 6.6 `C21_Benchmarking_and_Function_Pitfalls`：P4 收束
 
@@ -273,16 +289,17 @@ P4 仍按一个会话一个 `CHAPTER` 推进。本节只冻结 C16-C21 的章级
   `closed`。
 - C18 capstone 结论：权威启动模板未安排 pre-quiz capstone；参数绑定矩阵、
   本地化审计函数和 P4 函数管线候选均未被事后追认为已完成关卡。
-- 当前交接方向：`C19_Advanced_Function_Topics`，正式标题“组合、闭包、递归与
-  注解”，章节角色为 `normal`。唯一下一章入口为
-  [`C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`](C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md)；
-  应另开新会话从 preparation 开始，只正式推进 C19。当前模板未安排 pre-quiz
-  capstone，路线图中的规则注册表或本地化转换函数管线仍只是候选。
+- `C19_Advanced_Function_Topics`：正式主线、`11 / 11` 题逐题审批、画像、
+  阶段末笔记与最终收束均已完成；2026-10-01 标记为 `closed`，稳定得分
+  `100 / 100`。没有已排期 pre-quiz capstone；F1 和路线候选不被追认为项目关卡。
+- 唯一下一章：`C20_Comprehensions_Revisited_and_Generators`，正式标题
+  “生成器函数状态”，章节角色 `normal`，唯一已验证入口见第 6.5 节。
+  应另开新会话执行 C20 preparation；本次未开始 C20 教学。
 - 环境状态：保留旧 Python `3.9.13` 与 `.venv`；新增 Python `3.14.5` 与
   `.venv-py314`；后续日常学习默认使用 `.venv-py314`；PyCharm 升级暂缓，
   项目 SDK 已指向 `.venv-py314`，但旧 IDE 的版本标签不可信。
-- P3 的 C10-C15 与 P4 的 C16-C18 启动模板继续作为历史课程入口保留；它们不替代
-  当前 C19 模板，也不因章节关闭而改写为完成报告。
+- P3 的 C10-C15 与 P4 的 C16-C19 启动模板继续作为历史课程入口保留；它们不替代
+  当前交接的 C20 模板，也不因章节关闭而改写为完成报告。
 
 ## 10. 官方参考
 

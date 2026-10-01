@@ -1,6 +1,6 @@
 # P4 Functions and Generators
 
-本文件记录 `P4_Functions_and_Generators` 的阶段学习成果。P4 从“会写控制流”进一步进入“如何定义可调用边界、传递对象、组织结果与表达合同”的语言主线。当前收录已经形成稳定证据的 `C16_Function_Basics`、`C17_Scopes` 与 `C18_Arguments` 阶段成果；各章是否最终关闭，以其阶段状态段和生命周期证据为准，C19 及后续章节不在这里提前展开。
+本文件记录 `P4_Functions_and_Generators` 的阶段学习成果。P4 从“会写控制流”进一步进入“如何定义可调用边界、传递对象、组织结果与表达合同”的语言主线。当前收录已经形成稳定证据的 `C16_Function_Basics`、`C17_Scopes`、`C18_Arguments` 与 `C19_Advanced_Function_Topics` 阶段成果；各章是否最终关闭，以其阶段状态段和生命周期证据为准，C20 及后续章节不在这里提前展开。
 
 ---
 
@@ -1433,3 +1433,572 @@ bind      →  对该签名的映射证据
 ```
 
 C18 已完成正式主线、阶段测验审批、学习画像同步、阶段末笔记与最终收束，生命周期为 `closed`；本章角色仍是 `normal`，且没有已排期的测验前 capstone。下一章唯一入口是 `docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md`，应另开新会话执行 C19 preparation，不在本节提前教学高级函数主题。
+
+---
+
+## 21. C19 高级函数：行为组合、闭包状态、递归与注解
+
+### 21.0 阶段状态和可追溯入口
+
+- **章节身份**：`P4_Functions_and_Generators / C19_Advanced_Function_Topics`；角色为 `normal`。C16 是 P4 opener，C21 才是 closer，C19 不承担 PART 收束。
+- **范围权威**：[C19 启动模板](../docs/C19_ADVANCED_FUNCTION_TOPICS_STARTUP_TEMPLATE.md)。本节依据正式主线、[01—06 实验与 README](../practice/P4_Functions_and_Generators/C19_Advanced_Function_Topics/README.md)、[阶段测验及批改记录](../practice/P4_Functions_and_Generators/C19_Advanced_Function_Topics/stage_quiz_advanced_function_topics.md)和[学习画像](Python_Learning_Profile.md)，不由同主题材料追加必学范围。
+- **稳定证据**：2026-09-26 完成 A1—F1 共 `11 / 11` 题审批，`100 / 100`；核心机制、完整实现及聚焦运行均通过，没有需要扣分的错误。
+- **关卡状态**：正式主线、测验审批、画像同步、阶段末笔记与最终收束均已完成，C19 于 2026-10-01 标记为 `closed`。没有已排期的测验前 capstone；F1 是接口题，不是新增项目。长期记录及唯一下一章模板已验证；下一章为 `C20_Comprehensions_Revisited_and_Generators`（生成器函数状态，`normal`）。
+- **承接方式**：函数对象与基本退出模型见 18.2—18.4，LEGB/闭包入口见 19.6，默认值与调用合同见 20.4、20.7。本章以组合、跨时点状态和工程合同为新增重点，不重抄前置章节。
+
+### 21.1 有限路线图、应知应会与本质模型
+
+| 路线 | 应知应会 | 容易越界的结论 |
+| --- | --- | --- |
+| 一等函数 | 保存、传入、返回函数对象；定位真正调用点 | 保存 callable 就已执行 |
+| 高阶组合 | 用输入行为、字典分派和有序转换组织工作 | 同为 str → str 就可任意换序 |
+| 闭包环境 | 区分同环境共享、不同环境绑定独立与传入对象共享 | 工厂调用不同，所以所有数据都隔离 |
+| 晚绑定修复 | 比较默认参数与每轮工厂的时点和公开接口 | 固定引用等于冻结或复制配置 |
+| 递归 | 基线、递归步骤、进展量、局部绑定与返回链 | 有 return 或不断调用自己就能正确结束 |
+| lambda | 单表达式函数、普通参数和作用域语义 | lambda 无副作用，或自动捕获当时值 |
+| 注解与 Callable | 分清类型意图、形状匹配与真实行为 | 注解、bind 成功等于运行时合同已满足 |
+| 小型高阶 API | 写清参数、返回、异常、副作用及可验证路径 | 正常案例通过即证明所有输入和状态 |
+
+**必要补救**只围绕上表的机制边界；cell、`partial` 和递归限额内部细节是有限对照，不变成新考点。生成器函数/yield 留给 C20，基准留给 C21，系统装饰器和完整类型工程留到后续。
+
+本章反复使用四个问题：
+
+~~~text
+谁持有引用？  名字 / 字典项 / 序列槽位 / 默认对象 / enclosing 绑定
+何时读与调用？ 创建 / 选择保存 / 外层返回 / 稍后调用 / free name 读取
+什么发生变化？ 绑定改变 / 对象原地修改 / 新容器形成 / 已发生效果
+能证明到哪里？ 当前调用形状 / 此次结果与轨迹 / 尚未覆盖的合同
+~~~
+
+### 21.2 函数作为对象：保存的行为与当前分派
+
+一等对象强调函数也能成为普通操作的数据：别名、容器成员、实参和返回对象。高阶函数可接受函数**或**返回函数，不要求两者同时发生；在本章语境中讨论的是 callable 行为合同，而不是看某段语法长得像查表就一律叫高阶函数。
+
+~~~python
+events = []
+
+def lower(text):
+    events.append("lower")
+    return text.casefold()
+
+def choose(registry, name):
+    events.append("choose")
+    return registry[name]
+
+registry = {"clean": lower}
+selected = choose(registry, "clean")
+assert selected is lower
+assert events == ["choose"]
+
+registry["clean"] = str.upper
+assert selected("Menu.Start") == "menu.start"
+assert registry["clean"]("Menu.Quit") == "MENU.QUIT"
+assert events == ["choose", "lower"]
+~~~
+
+这里 `choose(...)` 确实执行了选择函数，但并未执行返回的 `lower`；之后的 `selected(...)` 才进入该规则。字典项被替换也不会追溯改写已经保存的 `selected`。
+
+比较两种设计：
+
+- **保存当前规则引用**：先 `selected = registry[name]`，以后调用 `selected(text)`。后续换字典项不改变已保存选择。
+- **每次动态查表**：每次都做 `registry[name](text)`。它使用调用时该键当前对应的对象，可能遇到换规则或缺键。
+- 二者都不自动冻结规则函数会读取的共享配置；“选择时点固定”与“行为永远不变”是两回事。
+
+“传函数不要加括号”只是特定意图下的提醒，不是通用语法禁令：`register(factory(config))` 可以先调用工厂取得 callable，再把返回的对象传给注册函数。应判断实参求值后得到什么对象，以及注册函数的实际合同；不能仅凭 `register` 这个名字断言它只保存而不执行。
+
+引用图中的 `registry["clean"]` 可作为对应字典项的标识；在表达式里它是下标取值。`registry["clean"] = other` 修改字典对象，不是重绑名字 `registry`。
+
+### 21.3 高阶转换、回调与有序组合
+
+**高阶转换**把“怎么处理”作为输入；**分派**按键选择行为；**callback**是交给其他代码在规定时点调用的行为；**管线**把前一步结果交给下一步。回调不天然异步，也不保证一定稍后才调用：具体时机由调用方代码决定。
+
+注册表只提供规则选择。可靠组合还要声明：
+
+1. 接收什么输入、接受哪些参数渠道；
+2. 正常返回什么类型和业务内容；
+3. 哪些失败可以出现，是否传播；
+4. 是否修改共享对象，以及正常/失败时留下什么效果；
+5. 步骤顺序和重复执行的语义。
+
+例如先对 `" Menu.Start "` 去空白再加 `"en:"` 得到 `"en:Menu.Start"`，反过来得到 `"en: Menu.Start"`。相同输入输出类型并不赋予交换律。
+
+本章管线的关键时间线：
+
+~~~text
+current = 初始输入
+→ 规则正常返回 → current 才重绑到结果
+→ 下一规则……
+→ on_success(current) 正常返回
+→ return current
+→ 调用方赋值才完成
+~~~
+
+| 失败位置 | 已完成的事实 | 不应声称的事实 |
+| --- | --- | --- |
+| 规则的调用形状不匹配 | 外层可能已进入并记事件 | 该规则函数体已执行 |
+| 规则体抛错 | 该规则可能已产生部分效果 | 此步 current 已成功重绑 |
+| 返回对象类型检查失败 | 规则已正常返回，甚至已修改外部状态 | 检查失败使规则等于没执行 |
+| callback 先 append 再抛错 | 全部转换可能已成功、通知也已产生效果 | 外层已经正常返回、调用方已拿到结果 |
+
+`on_success(current); return current` 会忽略 callback 的正常返回值；不能因为 callback 返回 `None` 就推断整个管线返回 `None`。异常退出也不是“正常返回 None”，不会自动回滚事件或完成调用方那次赋值。
+
+
+### 21.4 闭包：绑定的所有者与对象共享是两层问题
+
+19.6 已说明：内部函数可在外层返回后继续访问所需 enclosing 绑定。C19 进一步要求同时画出**环境绑定**和**绑定所指的对象**，不能只说“捕获了值”。
+
+~~~python
+def make_tracker(label, history):
+    count = 0
+
+    def record(key):
+        nonlocal count
+        count += 1
+        history.append((label, count, key))
+
+    def read():
+        return count, tuple(history)
+
+    def replace(new_history):
+        nonlocal history
+        history = new_history
+
+    return record, read, replace
+
+shared = []
+record_a, read_a, replace_a = make_tracker("A", shared)
+record_b, read_b, replace_b = make_tracker("B", shared)
+record_a("start")
+saved = read_a()
+old = shared
+replace_a([])
+record_b("quit")
+record_a("audio")
+shared = ["detached"]
+
+assert read_a() == (2, (("A", 2, "audio"),))
+assert read_b() == (1, (("A", 1, "start"), ("B", 1, "quit")))
+assert saved == (1, (("A", 1, "start"),))
+assert old == [("A", 1, "start"), ("B", 1, "quit")]
+assert shared == ["detached"]
+~~~
+
+先后的关系是：
+
+~~~text
+replace_a 前：
+A.history ─┐
+B.history ─┼→ L1
+old ───────┤
+shared ────┘
+
+断言检查前：
+A.history ─────────→ L2（A 后来记录 audio）
+B.history / old ───→ L1（start、quit）
+shared ────────────→ L3（detached）
+
+A.count 与 B.count 是不同工厂调用建立的独立绑定。
+~~~
+
+关键修复：
+
+- 同一次工厂创建的 `record/read/replace` 共享它们所用的 enclosing 绑定；改 A 的 history 后，A 的读写函数都看到新的目标。
+- 两次工厂调用建立不同绑定，但这里显式传入同一个列表，起初仍共享 L1。各次调用的 `history` 指向不同列表（例如工厂内分别创建 `[]`，或调用方传入不同列表）时，列表这一层才彼此隔离；内部元素是否共享仍需另查。
+- `history.append(...)` 修改对象，不需要 `nonlocal history`；`history = new_history` 重绑 enclosing 名字，才需要 `nonlocal`。
+- `replace_a` 没改 `count`，计数不会重置；外部 `old.append(...)` 绕过 record，不会自动增加 count。
+- 外部别名重绑不改闭包绑定；外部别名原地修改共享对象，闭包仍可能观察到。
+- `tuple(history)` 在本例复制外层元素引用，不随原列表以后 append 而增长；不深拷贝内层对象。快照层级须与需要的隔离层级一致。
+
+### 21.5 晚绑定：读取时点、两种修复与接口差别
+
+晚绑定不是“多个规则其实是同一个函数”，也不是 lambda 专属。普通 for 不创建每轮独立作用域；每轮执行 def 可以得到不同函数对象，但它们稍后访问同一次外层调用的同一个循环名字绑定。
+
+以下三个构建器均可独立比较：
+
+~~~python
+def build_late(configs):
+    rules = []
+    for config in configs:
+        def label(key):
+            return f"{config['locale']}:{key}"
+        rules.append(label)
+    return rules
+
+def build_defaults(configs):
+    rules = []
+    for config in configs:
+        def label(key, saved_config=config):
+            return f"{saved_config['locale']}:{key}"
+        rules.append(label)
+    return rules
+
+def make_rule(saved_config):
+    def label(key):
+        return f"{saved_config['locale']}:{key}"
+    return label
+
+def build_factories(configs):
+    return [make_rule(config) for config in configs]
+
+configs = [{"locale": "en-US"}, {"locale": "ja-JP"}]
+late = build_late(configs)
+defaults = build_defaults(configs)
+factories = build_factories(configs)
+assert late[0] is not late[1]
+assert [rule("k") for rule in late] == ["ja-JP:k", "ja-JP:k"]
+assert [rule("k") for rule in defaults] == ["en-US:k", "ja-JP:k"]
+assert [rule("k") for rule in factories] == ["en-US:k", "ja-JP:k"]
+
+old_config = configs[0]
+configs[0]["locale"] = "zh-CN"
+configs[0] = {"locale": "fr-FR"}
+assert defaults[0]("k") == factories[0]("k") == "zh-CN:k"
+assert configs[0] is not old_config
+assert defaults[0]("k", {"locale": "ko-KR"}) == "ko-KR:k"
+assert defaults[0]("k") == "zh-CN:k"
+~~~
+
+| 方案 | 保存/读取机制 | 调用接口及边界 |
+| --- | --- | --- |
+| 原晚绑定版本 | 稍后读同一次 build_late 的 config 绑定 | 本例均读到循环最后的字典 |
+| 默认参数修复 | 每轮 def 执行时求值默认表达式，函数保存当时字典引用 | `label(key, saved_config=...)` 允许第二实参；覆盖只改变本次形参绑定 |
+| 工厂修复 | 每轮调用 make_rule，建立独立 saved_config 绑定 | `label(key)` 不提供配置形参；不是安全沙箱 |
+| partial（可选对照） | 保存 callable 及预先给定的实参引用 | 改变调用形状；不是深拷贝或运行时合同验证器 |
+
+接口不同不等于对所有调用方都不兼容：默认参数版本虽然多暴露一个可选形参，仍接受本章的 `rule(text)` 调用。`Callable[[str], str]` 表达的是所需调用能力与返回意图，不要求函数恰好只声明一个形参；工厂修复的优势在于不把配置作为普通调用参数公开，而不是自动变得更安全。
+
+引用路径中的层次不要省略：`规则列表槽位 → 函数对象 → 默认引用或 enclosing 绑定 → 配置字典`。函数对象不是配置字典本身。
+
+`config` 换个名字如 `saved = config`，若仍是同一外层循环的一个共享绑定，也不会自动得到每轮隔离。`nonlocal` 只改变赋值目标，不提供逐轮快照。模块顶层循环的类似现象可能是稍后查 global，而非 enclosing；必须按真实词法结构判断。
+
+### 21.6 递归：剩余工作、返回合同与逐次局部状态
+
+递归的保底模型不是“自己调用自己”，而是：
+
+> 有可到达的基线；每次递归严格减少剩余工作；基线与递归分支都向上一层提供符合约定的结果。
+
+本例约定：有限普通字符串列表，从 index=0 开始，执行期间长度与内容不变。
+
+~~~python
+def collect(keys, index, events):
+    events.append(("enter", index))
+    if index == len(keys):
+        return []
+    current = keys[index].strip().casefold()
+    tail = collect(keys, index + 1, events)
+    events.append(("leave", index))
+    return [current, *tail]
+
+keys = [" A ", " B "]
+events = []
+result = collect(keys, 0, events)
+assert result == ["a", "b"]
+assert events == [
+    ("enter", 0), ("enter", 1), ("enter", 2),
+    ("leave", 1), ("leave", 0),
+]
+assert keys == [" A ", " B "]
+empty_events = []
+assert collect([], 0, empty_events) == []
+assert empty_events == [("enter", 0)]
+~~~
+
+非负整数进展量 `len(keys) - index` 从 2、1 减到 0；空列表也有一次基线调用。基线直接 return，所以有 enter 却没有 leave。算法终止论证不等于解释器对任意长度都承诺正常完成，本章不讨论性能基准或提高递归限额。
+
+| 时点 | index=0 的状态 | index=1 的状态 |
+| --- | --- | --- |
+| 内层准备调用 index=2 之前 | current 为 a，tail 尚未绑定，正在等下层 | current 为 b，tail 尚未绑定 |
+| 基线返回后、内层即将返回 | 仍在等待下层结果 | tail 为 []，将返回 ['b'] |
+| 最外层返回前 | tail 为 ['b']，将返回 ['a', 'b'] | 本次调用已返回 |
+
+每次调用有自己的局部绑定，但各层 keys/events 可以指向同一个列表。不要把“独立局部变量”说成“递归自动复制全部实参”。
+
+三个典型错误：
+
+- **基线改为裸 return**：基线正常返回 None；最先在 index=1 层构造 `[current, *tail]` 时，因为解包 None 抛 TypeError。不是基线本身抛错，也不是整个函数正常返回 None。
+- **下层返回正确，上层却只调用而不返回或组合**：子调用的结果不会自动成为父调用的返回值。若父调用随后自然落到函数末尾，它仍正常返回 None；应逐层核对结果如何接收、组合并交回。
+- **只用 if not keys 作基线却只递增 index**：原列表不变，非空条件不会趋向成立；本题在 index=2 的下标读取先出现 IndexError，不能想当然归为 RecursionError。
+
+循环可逐项 append 得到同序字符串列表，但这只是在题设输入下的结果内容对照；调用/返回结构、中间列表、失败轨迹与对象身份并不因此相同。
+
+
+### 21.7 lambda：短小行为表达式，不是特殊捕获机制
+
+lambda 表达式求值时创建函数对象；其单表达式函数体在调用时求值，正常完成时该表达式的值成为返回值。它沿用普通的参数匹配、词法作用域、默认参数和晚绑定规则。
+
+~~~python
+records = [
+    {"key": "menu.quit", "priority": 20},
+    {"key": "menu.start", "priority": 10},
+]
+ordered = sorted(records, key=lambda record: record["priority"])
+ordered[0]["key"] = "menu.begin"
+assert ordered is not records
+assert ordered[0] is records[1]
+assert records[1]["key"] == "menu.begin"
+
+notices = []
+report = lambda record: notices.append(record["key"])
+assert report(ordered[0]) is None
+assert notices == ["menu.begin"]
+
+def report_key(record):
+    key = record["key"]
+    notices.append(key)
+    return key
+
+assert report_key(ordered[0]) == "menu.begin"
+assert notices == ["menu.begin", "menu.begin"]
+~~~
+
+排序 key 的结果用来比较，并不替换列表元素；新外层列表仍保存原字典引用。`append` 有副作用且正常返回 None，因此 lambda 同时可能修改对象并返回 None。
+
+适用规则：短、局部、含义立即可见的排序键或参数适配可用 lambda；多步骤验证、记录与明确返回使用具名 def。选择理由是可读性、复用与审查难度，不是“lambda 更快”“lambda 纯”或“lambda 自动保存当时值”。
+
+### 21.8 注解与 Callable：声明、调用形状和真实行为分别取证
+
+完整证据阶梯见 18.6、20.7。C19 的新增重点是：注解描述的**期望规则**与传进来的**实际 callable**可能不一致；外层正常接收对象并不保证内部调用成功。
+
+~~~python
+from collections.abc import Callable
+
+TextRule = Callable[[str], str]
+events = []
+
+def apply_rule(text: str, rule: TextRule) -> str:
+    events.append("apply:enter")
+    result = rule(text)
+    events.append("apply:leave")
+    return result
+
+def wrong_return(text):
+    events.append("wrong:body")
+    return 123
+
+assert tuple(apply_rule.__annotations__) == ("text", "rule", "return")
+assert apply_rule.__annotations__["return"] is str
+assert events == []
+assert apply_rule("k", wrong_return) == 123
+assert events == ["apply:enter", "wrong:body", "apply:leave"]
+~~~
+
+在当前 Python 3.14.5、无 future annotations 的本例中，`__annotations__` 提供求值后的注解映射，不是最近一次调用的输入/输出记录。注解的版本性求值时机已在 18.6 说明；本节不把“可读取元数据”当成普遍无执行效果的安全保证。
+
+三类失败必须分层：
+
+| 输入规则/对象 | 真正的失败点 | 是否进入规则体 |
+| --- | --- | --- |
+| 无参函数却被 rule(text) 调用 | 内部参数匹配，TypeError | 否；外层可能已记录 enter |
+| normalize 收到整数 404 | 在函数体中读取 text.strip 属性，AttributeError | 是；但没有调用到 strip 方法 |
+| wrong_return 正常返回 123 | 未显式检查时不会仅因注解报错 | 是；业务类型意图未满足 |
+
+业务需要 str 返回时，应在 `rule(text)` 正常返回后、把结果当成成功值使用前显式 `isinstance(result, str)`。它只验证这一次对象类型，既不证明内容是合法本地化 key，也不回滚规则先前的副作用。
+
+`Callable[[str], str]`、`callable(obj)`、呈现签名、`bind(...)`、一次实际调用，回答的是不同问题。不能拿其中一项替代参数、返回、异常与副作用的完整业务合同。
+
+### 21.9 工程接口：构造时选择，调用时执行与检查
+
+F1 的设计价值是把三个职责分开：
+
+1. 构造时按名称解析并保存规则选择；缺键直接失败；
+2. 每次 run 处理一次输入，检查每步实际返回；
+3. 成功通知作为单独回调，其异常仍属于本次调用失败。
+
+下例保留测验的有限合同；registry 为普通字典，names 为有限普通名字列表，规则及回调由调用者保证可调用，但不保证其形状、返回或业务行为。
+
+~~~python
+def make_localizer(registry, names, *, on_success):
+    selected = []
+    for name in names:
+        selected.append(registry[name])
+    selected_rules = tuple(selected)
+
+    def run(text):
+        if not isinstance(text, str):
+            raise TypeError("text must be str")
+        current = text
+        for rule in selected_rules:
+            next_value = rule(current)
+            if not isinstance(next_value, str):
+                raise TypeError("rule must return str")
+            current = next_value
+        on_success(current)
+        return current
+
+    return run
+
+events = []
+
+def trim(text):
+    events.append("trim")
+    return text.strip()
+
+def fold(text):
+    events.append("fold")
+    return text.casefold()
+
+def success(text):
+    events.append(("success", text))
+    return "ignored receipt"
+
+names = ["trim", "fold"]
+registry = {"trim": trim, "fold": fold}
+run = make_localizer(registry, names, on_success=success)
+assert events == []
+names.clear()
+registry["trim"] = lambda text: "replaced"
+assert run(" Menu.Start ") == "menu.start"
+assert events == ["trim", "fold", ("success", "menu.start")]
+
+def failing_success(text):
+    events.append(("notice", text))
+    raise RuntimeError("notification failed")
+
+events.clear()
+empty = make_localizer({}, [], on_success=failing_success)
+result = "old"
+try:
+    result = empty(" Raw ")
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("expected callback failure")
+assert result == "old"
+assert events == [("notice", " Raw ")]
+~~~
+
+这里用普通循环强调“先选齐引用再返回 run”，与测验中的 tuple 构造表达式等价于同一有限合同；不是重新设计或另建项目。具体结果：
+
+- names 后改、registry 后换项，不会改变已保存序列；规则访问的闭包配置仍可变化。
+- 空链不额外规范化：仍验输入、通知一次、返回原输入；callback 异常时仍不正常返回。
+- 规则异常不捕获就原样传播；返回类型错时跳过余下步骤和 callback，不能声称无副作用。
+- callback 的正常返回值被忽略，不能拿通知回执替换业务结果。
+- 若应用希望“通知失败但转换仍成功”，那是另一份明确合同，须显式设计；不可偷偷吞掉异常来改变本题语义。
+
+若另一份 API 要把“未知规则名”转换为业务异常，应只围住对应的查表操作捕获 KeyError；不要把规则执行也包进去，否则规则体自己的 KeyError 可能被误报成注册表缺名。F1 保留缺名时的原始 KeyError，不因参考资料使用另一套异常合同而改写。
+
+验证按责任分组，而不是只验证最终字符串：
+
+| 路径 | 最小观察 |
+| --- | --- |
+| 构建与缺名 | 构建无行为事件；缺名 KeyError，未拿到可用 run |
+| 正常及构建后换配置 | 结果、规则顺序、callback 次数、已选函数引用 |
+| 入口类型失败 | 非空链也不进入任何规则/回调 |
+| 规则返回错型或抛错 | 原因、最后事件、余下步骤未执行、已有效果保留 |
+| callback 先记录后失败 | 旧结果绑定不变，记录仍存在，异常传播 |
+| 空链及重复调用 | 输入不被额外处理，每次各通知一次，不混入前次轨迹 |
+| 规则读取可变配置 | 同一已选函数可读到新状态；不是完整数据快照 |
+
+原测验四组实验及补充边界均已验证。观察本次输出不等于证明任意第三方函数安全正确；测试、类型注解和 tuple 都不是安全沙箱。
+
+
+### 21.10 正式工件与工具实践的设计价值
+
+| 工件 | 本章可复用的观察方法 |
+| --- | --- |
+| `01_first_class_functions_references_and_call_timing.py` | 用 is 与事件列表分离引用保存、函数返回及真正调用 |
+| `02_higher_order_callbacks_dispatch_and_composition.py` | 把高阶参数、注册/分派、规则顺序和失败前效果串成时间线 |
+| `03_closure_environments_sharing_and_factory_isolation.py` | 对比同环境共享、不同工厂调用创建的新列表、外部别名修改 |
+| `04_late_binding_fixes_and_partial_references.py` | 用不同函数身份与相同晚读结果定位机制；比较修复接口及可变配置 |
+| `05_recursion_base_progress_and_shared_objects.py` | 用显式记录的 index/remaining 展示进展；记录字典不是解释器真实栈帧 |
+| `06_lambda_annotations_callable_and_evidence_limits.py` | 将简短回调、类型意图、错误形状与真实对象操作分开观察 |
+| `stage_quiz_advanced_function_topics.md` | 在变体、对象图、控制流与 F1 接口中检验迁移，并保存逐题审批 |
+
+六个正式脚本是独立学习实验，允许保留重复辅助函数，不据此抽取仓库公共包。练手脚本是学习背景，不是正式编号脚本必须复刻的形态。
+
+`prompt_template_manager` 仅提供真实工程背景：CLI 的 `set_defaults(func=command_...)` 与 `args.func(args)` 分离保存和调用；GUI 的 `command=self.some_method`、`command=lambda: ...` 等说明事件处理器接收的是 callable。这里只静态说明行为对象的用途，不运行 GUI/CLI、数据库或 self-check，不展开 argparse/Tkinter/OOP，也不把已有项目追认为 C19 capstone。
+
+### 21.11 本阶段作答轨迹、概念混淆与重复错误
+
+应区分“本章常见坑”与“本人实际犯过的错误”。可恢复的主线回答提供了以下正面证据，不能为了补齐错题栏目反向编造误解：
+
+| 交互节点 | 已给出的准确判断 | 保留的精度边界 |
+| --- | --- | --- |
+| choose 返回 lower | 先只有 choose 事件；selected is lower 为真；调用后才追加 lower | 选择函数已执行，不等于被选规则已执行 |
+| callback 抛错 | result 保持 old；notices 已记录 menu.start | 右侧未正常完成，左侧绑定未完成；不是自动回滚或正常返回 None |
+| 闭包外部别名 | count 只被 record 增加一次；old.append 绕过计数；exposed 重绑到新列表 | 保留旧别名修改共享对象，与外部名字脱离旧对象分开 |
+| 递归基线改裸 return | 基线平安返回 None；index=1 的解包最先 TypeError | 定位最先要求结果可迭代的上一层，不能把错误倒推到基线 |
+
+C18 历史上出现过跨时点别名、箭头方向和初始绑定的表达精度问题；本次 B1、C1/C2、D1 已体现改善。不能把上一章扣分原样记成本章仍然重复犯错。C19 没有活跃的主干误解，后续维护的是表达和验证纪律。
+
+### 21.12 阶段测验：稳定能力与非扣分精修
+
+| 分区 | 得分 | 主要验证 |
+| --- | ---: | --- |
+| A | 12 / 12 | 一等函数、高阶性质、组合与证据边界 |
+| B | 18 / 18 | 已保存引用与当前分派，异常和调用方赋值 |
+| C | 24 / 24 | 环境/对象两层隔离，两种晚绑定修复与接口 |
+| D | 16 / 16 | 基线、进展、精确时点局部绑定与循环对照 |
+| E | 14 / 14 | lambda 副作用、排序引用、注解和失败层次 |
+| F | 16 / 16 | 小型转换 API、四项合同及四组实验 |
+| **总分** | **100 / 100** | **11 / 11 全覆盖，无扣分** |
+
+最终能力判断保持：**中级入门前段已经稳固，C19 高级函数有限主干达到优秀，能独立审查与实现小型高阶函数 API。** 满分只对应本卷范围，不等于 P4 已关闭或全部 Python 高级主题已掌握。
+
+非扣分精修必须留下可执行修复：
+
+1. **浅快照证据不足**：`before = events.copy(); before == events` 不证明调用期间没有修改。浅复制可能共享内部对象；先修改再恢复也可能使结束时相等。应声明观察层级和时间点，必要时记录事件，并明确未覆盖状态。
+2. **一个绑定须说清名字**：是该次外层调用共享一个 `config` 绑定，不是整个调用只有一个局部名字。
+3. **引用图的省略层**：`rule → dict` 若表示间接可达关系就说明省略层，严谨图补回函数保存的默认引用或 enclosing 绑定。
+4. **属性读取先于方法调用**：当 text 是整数，求值 `text.strip()` 在读取 strip 属性时就失败，没有进入不存在的方法。
+5. **验证覆盖不等于新评分门槛**：F1 空链非法输入能观察 callback 未进入；另测非空链能增加“规则也未进入”的直接证据，不据此给正确实现倒扣分。
+
+浅快照反例可独立运行：
+
+~~~python
+events = [{"count": 0}]
+before = events.copy()
+events[0]["count"] += 1
+assert before == events
+assert before[0] is events[0]
+assert before[0]["count"] == 1
+~~~
+
+验收也要分层：整卷严格验证器会拒绝答案中 9 个非独立 Python 说明片段和 6 处 Markdown 行末双空格；原答因此保留，没有伪报整卷通过。题干/批改区结构、完整实现的编译与针对性运行另行核验。工具报告的“片段非独立”不等于实际函数错误，也不能靠改写学习者原答案消掉证据。
+
+### 21.13 工程应知应会、习惯、禁忌与技巧
+
+#### 读代码时
+
+- 先找真正的调用表达式，再区分规则注册、引用返回和执行。
+- 为观察选定一个时点；标清函数尚未返回、已返回、调用方绑定是否完成。
+- 闭包同时画环境绑定与对象共享，递归同时画独立局部绑定与共享实参。
+- 遇到异常按源码定位最先失败的操作，保留此前效果，不靠异常名称猜路径。
+
+#### 设计行为接口时
+
+- 明确采用构造时快照选择还是每次动态分派，别让两者混杂。
+- 转换函数返回结果；通知回调承担明确副作用。谁拥有异常处理职责必须写清。
+- 用默认参数修复时检查额外公开形参是否符合接口；需要只暴露 key 时可用工厂。
+- 共享可变对象是可选择的设计，不是必然错误；要说明所有者和写入口。
+- 返回值类型检查放在正常返回后；业务内容检查是另一层，不用无条件 str(...) 掩盖错误类型。
+- 多步骤业务行为写具名 def；不要为节省行数把验证、修改、返回塞进复杂 lambda。
+- 若递归没有比循环更清楚地表达子问题，就用直白循环；不在没有测量时宣称性能优劣。
+
+#### 验证与禁忌
+
+- 用 is 取身份事实，用事件列表取先后/部分效果，用结果内容取业务事实，避免互相替代。
+- 对失败检查“预期异常确实出现”及“后续行为没有出现”，不能只有 except pass。
+- 同时覆盖空链、正常、入口错型、规则错型/抛错、callback 失败和后续配置变化。
+- 不把 closure/tuple/default/partial 叫深快照；不把注册/注解/bind 叫完整合同验证。
+- 不把构造新的函数环境说成数据深隔离，不把普通子进程或回调容器说成安全沙箱。
+- 不因本章有可组合管线就搭建通用注册框架、装饰器系统或仓库公共 src；复用抽象须有独立调用方和稳定契约。
+
+### 21.14 阶段精髓小结
+
+~~~text
+函数是对象：保存引用与执行函数是不同动作。
+组合看合同：类型能衔接，不等于顺序可交换、无异常或无副作用。
+闭包保访问：环境绑定有所有者，被引用对象仍可能共享。
+隔离看两层：独立绑定不保证独立数据，外部别名也能修改共享对象。
+晚绑定看时点：不同函数可能稍后读同一个名字；修复要改变保存机制。
+默认存引用：可由本次实参覆盖，不自动冻结可变内容。
+工厂建绑定：每次调用提供新环境，不自动复制传入对象。
+递归看进展：基线、剩余工作和返回合同缺一不可。
+返回分层次：规则完成、callback 完成、外层返回和调用方绑定各是一个阶段。
+lambda 无特权：单表达式仍可能修改对象，也遵守普通作用域规则。
+注解有上限：类型意图不是运行时检查，检查类型也不等于业务正确。
+验证要限界：输出、身份、轨迹和代码审查互补，不把有限证据说成无限保证。
+~~~
+
+本节完成 C19 的阶段末知识沉淀；2026-10-01 最终收束已验证并标记为 `closed`，稳定成绩和能力判断不变。下一章唯一入口为 [C20 新会话启动模板](../docs/C20_COMPREHENSIONS_REVISITED_AND_GENERATORS_STARTUP_TEMPLATE.md)。实体书问答属于可选补充，不阻塞收束；C20 应另开会话从 preparation 开始，不在这里提前教学。
